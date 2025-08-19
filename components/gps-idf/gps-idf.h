@@ -1,71 +1,60 @@
-// my_components/gps_tiny/gps_tiny.h
 #pragma once
 
-
+#include "esphome.h"
 #include "esphome/core/component.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
-#include "esphome/components/binary_sensor/binary_sensor.h"
 
-
-#include "TinyGPS++.h"
-
+#include <driver/uart.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <string>
+#include <vector>
 
 namespace esphome {
-namespace gps_idf {
+namespace nmea_gps {
 
+class NMEAGPSComponent : public Component, public uart::UARTDevice {
+ public:
+  void setup() override;
+  void loop() override;
+  void dump_config() override;
 
-class GPSIDFComponent : public PollingComponent, public uart::UARTDevice {
-public:
-void set_publish_only_on_fix(bool v) { publish_only_on_fix_ = v; }
+  // Setters for YAML configuration
+  void set_latitude_sensor(sensor::Sensor *sensor) { latitude_sensor_ = sensor; }
+  void set_longitude_sensor(sensor::Sensor *sensor) { longitude_sensor_ = sensor; }
+  void set_altitude_sensor(sensor::Sensor *sensor) { altitude_sensor_ = sensor; }
+  void set_speed_sensor(sensor::Sensor *sensor) { speed_sensor_ = sensor; }
+  void set_course_sensor(sensor::Sensor *sensor) { course_sensor_ = sensor; }
+  void set_satellites_sensor(sensor::Sensor *sensor) { satellites_sensor_ = sensor; }
+  void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
+  void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
+  void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
+  void set_verbose_logging(bool verbose) { verbose_logging_ = verbose; }
 
+ protected:
+  sensor::Sensor *latitude_sensor_{nullptr};
+  sensor::Sensor *longitude_sensor_{nullptr};
+  sensor::Sensor *altitude_sensor_{nullptr};
+  sensor::Sensor *speed_sensor_{nullptr};
+  sensor::Sensor *course_sensor_{nullptr};
+  sensor::Sensor *satellites_sensor_{nullptr};
+  sensor::Sensor *hdop_sensor_{nullptr};
+  text_sensor::TextSensor *datetime_sensor_{nullptr};
+  text_sensor::TextSensor *fix_status_sensor_{nullptr};
+  bool verbose_logging_{false};
 
-void set_latitude_sensor(sensor::Sensor *s) { latitude_ = s; }
-void set_longitude_sensor(sensor::Sensor *s) { longitude_ = s; }
-void set_altitude_sensor(sensor::Sensor *s) { altitude_ = s; }
-void set_speed_sensor(sensor::Sensor *s) { speed_ = s; }
-void set_course_sensor(sensor::Sensor *s) { course_ = s; }
-void set_hdop_sensor(sensor::Sensor *s) { hdop_ = s; }
-void set_satellites_sensor(sensor::Sensor *s) { satellites_ = s; }
+  std::string buffer_;
+  bool has_fix_{false};
 
-
-void set_date_text_sensor(text_sensor::TextSensor *s) { date_ = s; }
-void set_time_text_sensor(text_sensor::TextSensor *s) { time_ = s; }
-void set_datetime_text_sensor(text_sensor::TextSensor *s) { datetime_ = s; }
-
-
-void set_fix_binary_sensor(binary_sensor::BinarySensor *b) { fix_ = b; }
-
-
-void setup() override {} // nothing to init; UART is managed by UARTDevice
-void loop() override; // continuously feed TinyGPS++
-void update() override; // publish values at the configured interval
-void dump_config() override;
-
-
-protected:
-TinyGPSPlus gps_;
-bool publish_only_on_fix_{true};
-
-
-sensor::Sensor *latitude_{nullptr};
-sensor::Sensor *longitude_{nullptr};
-sensor::Sensor *altitude_{nullptr};
-sensor::Sensor *speed_{nullptr};
-sensor::Sensor *course_{nullptr};
-sensor::Sensor *hdop_{nullptr};
-sensor::Sensor *satellites_{nullptr};
-
-
-text_sensor::TextSensor *date_{nullptr};
-text_sensor::TextSensor *time_{nullptr};
-text_sensor::TextSensor *datetime_{nullptr};
-
-
-binary_sensor::BinarySensor *fix_{nullptr};
+  void process_nmea_sentence(const std::string &sentence);
+  void parse_gga(const std::string &sentence);
+  void parse_rmc(const std::string &sentence);
+  std::vector<std::string> split(const std::string &str, char delimiter);
+  float parse_coord(const std::string &value, const std::string &direction);
+  void clear_sensors();
 };
 
-
-} // namespace gps_tiny
-} // namespace esphome
+}  // namespace nmea_gps
+}  // namespace esphome

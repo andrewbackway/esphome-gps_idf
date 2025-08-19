@@ -31,35 +31,42 @@ external_components:
     refresh: 1s
 
 uart:
-  - id: uart_gps
-    rx_pin: GPIO16
-    tx_pin: GPIO17
-    baud_rate: 9600
+  id: uart_gps
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 9600
 
-gps-idf:
+nmea_gps:
+  id: gps
   uart_id: uart_gps
-  update_interval: 1s
-  publish_only_on_fix: true
-
+  verbose_logging: true
   latitude:
     name: "GPS Latitude"
+    unit_of_measurement: "°"
+    accuracy_decimals: 6
   longitude:
     name: "GPS Longitude"
+    unit_of_measurement: "°"
+    accuracy_decimals: 6
   altitude:
     name: "GPS Altitude"
+    unit_of_measurement: "m"
+    accuracy_decimals: 1
   speed:
     name: "GPS Speed"
+    unit_of_measurement: "km/h"
+    accuracy_decimals: 1
   course:
     name: "GPS Course"
+    unit_of_measurement: "°"
+    accuracy_decimals: 1
   satellites:
     name: "GPS Satellites"
+    accuracy_decimals: 0
   hdop:
     name: "GPS HDOP"
-  fix:
-    name: "GPS Fix"
-  date:
-    name: "GPS Date (UTC)"
-  time:
-    name: "GPS Time (UTC)"
+    accuracy_decimals: 2
   datetime:
-    name: "GPS Datetime (UTC)"
+    name: "GPS DateTime"
+  fix_status:
+    name: "GPS Fix Status"
