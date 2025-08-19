@@ -2,7 +2,7 @@ from esphome.components import sensor, text_sensor, uart
 import esphome.config_validation as cv
 import esphome.codegen as cg
 
-DEPENDENCIES = ["uart"]
+DEPENDENCIES = ["uart", "sensor", "text_sensor"]
 AUTO_LOAD = []
 
 nmea_gps_ns = cg.esphome_ns.namespace("nmea_gps")
