@@ -1,0 +1,65 @@
+esphome:
+  name: esphome-web-9dd449
+  friendly_name: ESPHome CFX
+  min_version: 2025.5.0
+  name_add_mac_suffix: false
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+# Enable logging
+logger:
+  baud_rate: 115200 
+  level: WARN
+  
+# Allow Over-The-Air updates
+ota:
+- platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid 
+  password: !secret wifi_password
+
+web_server:
+  version: 3
+  local: true
+
+external_components:
+  - source: github://andrewbackway/esphome-gps-idf
+    refresh: 1s
+
+uart:
+  - id: uart_gps
+    rx_pin: GPIO16
+    tx_pin: GPIO17
+    baud_rate: 9600
+
+gps-idf:
+  uart_id: uart_gps
+  update_interval: 1s
+  publish_only_on_fix: true
+
+  latitude:
+    name: "GPS Latitude"
+  longitude:
+    name: "GPS Longitude"
+  altitude:
+    name: "GPS Altitude"
+  speed:
+    name: "GPS Speed"
+  course:
+    name: "GPS Course"
+  satellites:
+    name: "GPS Satellites"
+  hdop:
+    name: "GPS HDOP"
+  fix:
+    name: "GPS Fix"
+  date:
+    name: "GPS Date (UTC)"
+  time:
+    name: "GPS Time (UTC)"
+  datetime:
+    name: "GPS Datetime (UTC)"

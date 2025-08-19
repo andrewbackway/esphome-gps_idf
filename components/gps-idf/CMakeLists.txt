@@ -1,5 +1,10 @@
 idf_component_register(
-    SRCS "gps-idf.cpp" "TinyGPS++.cpp"
-    INCLUDE_DIRS "."
-    REQUIRES log
+    SRCS
+        "gps-idf.cpp"
+        "TinyGPSPlus/src/TinyGPS++.cpp"
+    INCLUDE_DIRS
+        "."
+        "TinyGPSPlus/src"
+    REQUIRES
+        log
 )
