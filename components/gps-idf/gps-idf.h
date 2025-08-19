@@ -82,4 +82,3 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
 
 }  // namespace gps_idf
 }  // namespace esphome
-```

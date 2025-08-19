@@ -261,4 +261,3 @@ std::string GPSIDFComponent::vector_to_string(const std::vector<std::string> &ve
 
 }  // namespace gps_idf
 }  // namespace esphome
-```
