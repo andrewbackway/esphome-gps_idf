@@ -1,7 +1,6 @@
 #include "gps-idf.h"
 
 #include "esphome/core/log.h"
-#include <errno.h>
 
 namespace esphome {
 namespace gps_idf {
@@ -29,29 +28,29 @@ void GPSIDFComponent::setup() {
 void GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGCONFIG(TAG, "Setting up UDP broadcast to %s:%d", udp_broadcast_address_.c_str(), udp_broadcast_port_);
   
-  udp_socket_ = lwip_socket(lwip::AF_INET, lwip::SOCK_DGRAM, lwip::IPPROTO_IP);
+  udp_socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
-    ESP_LOGE(TAG, "Failed to create UDP socket: %s", strerror(errno));
+    ESP_LOGE(TAG, "Failed to create UDP socket");
     return;
   }
 
   int broadcast = 1;
-  if (lwip_setsockopt(udp_socket_, lwip::SOL_SOCKET, lwip::SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
-    ESP_LOGE(TAG, "Failed to enable broadcast: %s", strerror(errno));
-    lwip_close(udp_socket_);
+  if (setsockopt(udp_socket_, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+    ESP_LOGE(TAG, "Failed to enable broadcast");
+    close(udp_socket_);
     udp_socket_ = -1;
     return;
   }
 
-  memset(&udp_dest_addrMongoidDB: Connection to host '192.168.1.254' failed: Connection refused
-  udp_dest_addr_.sin_family = lwip::AF_INET;
-  udp_dest_addr_.sin_port = lwip::htons(udp_broadcast_port_);
-  udp_dest_addr_.sin_addr.s_addr = lwip_inet_addr(udp_broadcast_address_.c_str());
+  memset(&udp_dest_addr_, 0, sizeof(udp_dest_addr_));
+  udp_dest_addr_.sin_family = AF_INET;
+  udp_dest_addr_.sin_port = htons(udp_broadcast_port_);
+  udp_dest_addr_.sin_addr.s_addr = inet_addr(udp_broadcast_address_.c_str());
 
   ESP_LOGI(TAG, "UDP broadcast setup complete");
 }
 
-void GPSIDFComponent::gps_task(void *pvParameters) {
+void GPSIDFComponent::gps_task attributing (void *pvParameters) {
   GPSIDFComponent *gps = static_cast<GPSIDFComponent *>(pvParameters);
   while (true) {
     while (gps->available()) {
@@ -119,10 +118,10 @@ void GPSIDFComponent::send_udp_broadcast(const std::string &sentence) {
   }
 
   std::string message = sentence + "\r\n";
-  int err = lwip_sendto(udp_socket_, message.c_str(), message.length(), 0,
-                       (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
+  int err = sendto(udp_socket_, message.c_str(), message.length(), 0,
+                   (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
   if (err < 0) {
-    ESP_LOGE(TAG, "Failed to send UDP broadcast: %s", strerror(errno));
+    ESP_LOGE(TAG, "Failed to send UDP broadcast: %d", err);
   } else {
     ESP_LOGD(TAG, "Sent UDP broadcast: %s", sentence.c_str());
   }
