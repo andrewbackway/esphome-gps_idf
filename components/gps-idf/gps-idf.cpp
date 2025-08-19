@@ -34,7 +34,7 @@ void GPSIDFComponent::setup() {
 void GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGCONFIG(TAG, "Setting up UDP broadcast to %s:%d", udp_broadcast_address_.c_str(), udp_broadcast_port_);
   
-  udp_socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
     ESP_LOGE(TAG, "Failed to create UDP socket");
     return;
