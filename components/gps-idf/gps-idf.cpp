@@ -1,15 +1,15 @@
 // my_components/gps_tiny/gps_tiny.cpp
-#include "gps_tiny.h"
+#include "gps-idf.h"
 #include "esphome/core/log.h"
 
 namespace esphome
 {
-    namespace gps_tiny
+    namespace gps_idf
     {
 
         static const char *const TAG = "gps_tiny";
 
-        void GPSTinyComponent::loop()
+        void GPSIDFComponent::loop()
         {
             // Drain UART and feed TinyGPS++ byte-by-byte
             while (this->available())
@@ -26,7 +26,7 @@ namespace esphome
             }
         }
 
-        void GPSTinyComponent::update()
+        void GPSIDFComponent::update()
         {
             // Determine fix validity
             const bool has_fix = this->gps_.location.isValid() && !this->gps_.location.isUpdated() ? this->gps_.location.age() < 2000 : this->gps_.location.isValid();
@@ -86,7 +86,7 @@ namespace esphome
             }
         }
 
-        void GPSTinyComponent::dump_config()
+        void GPSIDFComponent::dump_config()
         {
             ESP_LOGCONFIG(TAG, "GPS Tiny (TinyGPS++)");
             LOG_UART_DEVICE(this);

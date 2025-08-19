@@ -13,10 +13,10 @@
 
 
 namespace esphome {
-namespace gps_tiny {
+namespace gps_idf {
 
 
-class GPSTinyComponent : public PollingComponent, public uart::UARTDevice {
+class GPSIDFComponent : public PollingComponent, public uart::UARTDevice {
 public:
 void set_publish_only_on_fix(bool v) { publish_only_on_fix_ = v; }
 
