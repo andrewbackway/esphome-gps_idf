@@ -1,36 +1,49 @@
 #pragma once
 
-#include "esphome.h"
-#include "esphome/core/component.h"
-#include "esphome/components/uart/uart.h"
-#include "esphome/components/sensor/sensor.h"
-#include "esphome/components/text_sensor/text_sensor.h"
-
 #include <driver/uart.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+
 #include <string>
 #include <vector>
 
-namespace esphome {
-namespace nmea_gps {
+#include "esphome.h"
+#include "esphome/components/sensor/sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
+#include "esphome/components/uart/uart.h"
+#include "esphome/core/component.h"
 
-class NMEAGPSComponent : public Component, public uart::UARTDevice {
+namespace esphome {
+namespace gps_idf {
+
+class GPSIDFComponent : public Component, public uart::UARTDevice {
  public:
   void setup() override;
   void loop() override;
   void dump_config() override;
 
   // Setters for YAML configuration
-  void set_latitude_sensor(sensor::Sensor *sensor) { latitude_sensor_ = sensor; }
-  void set_longitude_sensor(sensor::Sensor *sensor) { longitude_sensor_ = sensor; }
-  void set_altitude_sensor(sensor::Sensor *sensor) { altitude_sensor_ = sensor; }
+  void set_latitude_sensor(sensor::Sensor *sensor) {
+    latitude_sensor_ = sensor;
+  }
+  void set_longitude_sensor(sensor::Sensor *sensor) {
+    longitude_sensor_ = sensor;
+  }
+  void set_altitude_sensor(sensor::Sensor *sensor) {
+    altitude_sensor_ = sensor;
+  }
   void set_speed_sensor(sensor::Sensor *sensor) { speed_sensor_ = sensor; }
   void set_course_sensor(sensor::Sensor *sensor) { course_sensor_ = sensor; }
-  void set_satellites_sensor(sensor::Sensor *sensor) { satellites_sensor_ = sensor; }
+  void set_satellites_sensor(sensor::Sensor *sensor) {
+    satellites_sensor_ = sensor;
+  }
   void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
-  void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
-  void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
+  void set_datetime_sensor(text_sensor::TextSensor *sensor) {
+    datetime_sensor_ = sensor;
+  }
+  void set_fix_status_sensor(text_sensor::TextSensor *sensor) {
+    fix_status_sensor_ = sensor;
+  }
   void set_verbose_logging(bool verbose) { verbose_logging_ = verbose; }
 
  protected:
@@ -56,5 +69,5 @@ class NMEAGPSComponent : public Component, public uart::UARTDevice {
   void clear_sensors();
 };
 
-}  // namespace nmea_gps
+}  // namespace gps_idf
 }  // namespace esphome
