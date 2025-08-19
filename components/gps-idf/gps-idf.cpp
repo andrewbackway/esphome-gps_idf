@@ -1,5 +1,7 @@
 // my_components/gps_tiny/gps_tiny.cpp
 #include "gps-idf.h"
+
+#include "esphome/components/uart/uart.h"
 #include "esphome/core/log.h"
 
 namespace esphome
