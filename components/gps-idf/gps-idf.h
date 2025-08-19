@@ -4,10 +4,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-// Include ESP-IDF socket headers
-#include "lwip/sockets.h"
-#include "lwip/netdb.h"
-#include "lwip/inet.h"
+// Include ESP-IDF socket headers with angle brackets
+#include <lwip/sockets.h>
+#include <lwip/netdb.h>
+#include <lwip/inet.h>
 
 #include <string>
 #include <vector>
