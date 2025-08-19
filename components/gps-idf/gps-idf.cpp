@@ -50,7 +50,7 @@ void GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGI(TAG, "UDP broadcast setup complete");
 }
 
-void GPSIDFComponent::gps_task attributing (void *pvParameters) {
+void GPSIDFComponent::gps_task(void *pvParameters) {
   GPSIDFComponent *gps = static_cast<GPSIDFComponent *>(pvParameters);
   while (true) {
     while (gps->available()) {
