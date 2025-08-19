@@ -19,31 +19,18 @@ namespace gps_idf {
 class GPSIDFComponent : public Component, public uart::UARTDevice {
  public:
   void setup() override;
-  void loop() override;
   void dump_config() override;
 
   // Setters for YAML configuration
-  void set_latitude_sensor(sensor::Sensor *sensor) {
-    latitude_sensor_ = sensor;
-  }
-  void set_longitude_sensor(sensor::Sensor *sensor) {
-    longitude_sensor_ = sensor;
-  }
-  void set_altitude_sensor(sensor::Sensor *sensor) {
-    altitude_sensor_ = sensor;
-  }
+  void set_latitude_sensor(sensor::Sensor *sensor) { latitude_sensor_ = sensor; }
+  void set_longitude_sensor(sensor::Sensor *sensor) { longitude_sensor_ = sensor; }
+  void set_altitude_sensor(sensor::Sensor *sensor) { altitude_sensor_ = sensor; }
   void set_speed_sensor(sensor::Sensor *sensor) { speed_sensor_ = sensor; }
   void set_course_sensor(sensor::Sensor *sensor) { course_sensor_ = sensor; }
-  void set_satellites_sensor(sensor::Sensor *sensor) {
-    satellites_sensor_ = sensor;
-  }
+  void set_satellites_sensor(sensor::Sensor *sensor) { satellites_sensor_ = sensor; }
   void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
-  void set_datetime_sensor(text_sensor::TextSensor *sensor) {
-    datetime_sensor_ = sensor;
-  }
-  void set_fix_status_sensor(text_sensor::TextSensor *sensor) {
-    fix_status_sensor_ = sensor;
-  }
+  void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
+  void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
   void set_verbose_logging(bool verbose) { verbose_logging_ = verbose; }
 
  protected:
@@ -60,6 +47,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
 
   std::string buffer_;
   bool has_fix_{false};
+  TaskHandle_t gps_task_handle_{nullptr};
 
   void process_nmea_sentence(const std::string &sentence);
   void parse_gga(const std::string &sentence);
@@ -67,6 +55,8 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   std::vector<std::string> split(const std::string &str, char delimiter);
   float parse_coord(const std::string &value, const std::string &direction);
   void clear_sensors();
+
+  static void gps_task(void *pvParameters);
 };
 
 }  // namespace gps_idf

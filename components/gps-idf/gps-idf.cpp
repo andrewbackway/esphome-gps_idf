@@ -10,19 +10,32 @@ static const char *TAG = "gps_idf";
 void GPSIDFComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up GPS-IDF component...");
   this->buffer_.reserve(256);  // Reserve buffer for NMEA sentences
+
+  // Create FreeRTOS task for GPS processing
+  BaseType_t result = xTaskCreate(
+      gps_task, "gps_task", 4096, this, 5, &this->gps_task_handle_);
+  if (result != pdPASS) {
+    ESP_LOGE(TAG, "Failed to create GPS task");
+  } else {
+    ESP_LOGI(TAG, "GPS task created successfully");
+  }
 }
 
-void GPSIDFComponent::loop() {
-  while (this->available()) {
-    char c = this->read();
-    if (c == '\n') {
-      if (!this->buffer_.empty() && this->buffer_[0] == '$') {
-        process_nmea_sentence(this->buffer_);
+void GPSIDFComponent::gps_task(void *pvParameters) {
+  GPSIDFComponent *gps = static_cast<GPSIDFComponent *>(pvParameters);
+  while (true) {
+    while (gps->available()) {
+      char c = gps->read();
+      if (c == '\n') {
+        if (!gps->buffer_.empty() && gps->buffer_[0] == '$') {
+          gps->process_nmea_sentence(gps->buffer_);
+        }
+        gps->buffer_.clear();
+      } else {
+        gps->buffer_ += c;
       }
-      this->buffer_.clear();
-    } else {
-      this->buffer_ += c;
     }
+    vTaskDelay(pdMS_TO_TICKS(10));  // Small delay to prevent CPU hogging
   }
 }
 
@@ -37,8 +50,7 @@ void GPSIDFComponent::dump_config() {
   LOG_SENSOR("  ", "HDOP", this->hdop_sensor_);
   LOG_TEXT_SENSOR("  ", "DateTime", this->datetime_sensor_);
   LOG_TEXT_SENSOR("  ", "Fix Status", this->fix_status_sensor_);
-  ESP_LOGCONFIG(TAG, "  Verbose Logging: %s",
-                this->verbose_logging_ ? "ON" : "OFF");
+  ESP_LOGCONFIG(TAG, "  Verbose Logging: %s", this->verbose_logging_ ? "ON" : "OFF");
 }
 
 void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
@@ -48,8 +60,7 @@ void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
 
   if (sentence.rfind("$GPGGA", 0) == 0 || sentence.rfind("$GNGGA", 0) == 0) {
     parse_gga(sentence);
-  } else if (sentence.rfind("$GPRMC", 0) == 0 ||
-             sentence.rfind("$GNRMC", 0) == 0) {
+  } else if (sentence.rfind("$GPRMC", 0) == 0 || sentence.rfind("$GNRMC", 0) == 0) {
     parse_rmc(sentence);
   }
 }
@@ -71,8 +82,7 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
     if (!this->has_fix_) {
       this->fix_status_sensor_->publish_state("No Fix");
     } else {
-      this->fix_status_sensor_->publish_state(fix_quality == 1 ? "2D Fix"
-                                                               : "3D Fix");
+      this->fix_status_sensor_->publish_state(fix_quality == 1 ? "2D Fix" : "3D Fix");
     }
   }
 
@@ -99,8 +109,7 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
     this->hdop_sensor_->publish_state(std::stof(fields[8]));
   }
 
-  if (this->altitude_sensor_ && !fields[9].empty() && !fields[10].empty() &&
-      fields[10] == "M") {
+  if (this->altitude_sensor_ && !fields[9].empty() && !fields[10].empty() && fields[10] == "M") {
     this->altitude_sensor_->publish_state(std::stof(fields[9]));
   }
 }
@@ -135,17 +144,15 @@ void GPSIDFComponent::parse_rmc(const std::string &sentence) {
     std::string date = fields[9];
     std::string time = fields[1];
     if (date.size() >= 6 && time.size() >= 6) {
-      std::string datetime = "20" + date.substr(4, 2) + "-" +
-                             date.substr(2, 2) + "-" + date.substr(0, 2) + "T" +
-                             time.substr(0, 2) + ":" + time.substr(2, 2) + ":" +
-                             time.substr(4, 2) + "Z";
+      std::string datetime = "20" + date.substr(4, 2) + "-" + date.substr(2, 2) + "-" +
+                             date.substr(0, 2) + "T" + time.substr(0, 2) + ":" +
+                             time.substr(2, 2) + ":" + time.substr(4, 2) + "Z";
       this->datetime_sensor_->publish_state(datetime);
     }
   }
 }
 
-std::vector<std::string> GPSIDFComponent::split(const std::string &str,
-                                                char delimiter) {
+std::vector<std::string> GPSIDFComponent::split(const std::string &str, char delimiter) {
   std::vector<std::string> tokens;
   std::string token;
   for (char c : str) {
@@ -162,8 +169,7 @@ std::vector<std::string> GPSIDFComponent::split(const std::string &str,
   return tokens;
 }
 
-float GPSIDFComponent::parse_coord(const std::string &value,
-                                   const std::string &direction) {
+float GPSIDFComponent::parse_coord(const std::string &value, const std::string &direction) {
   if (value.empty()) return 0.0f;
   float val = std::stof(value);
   int degrees = static_cast<int>(val / 100);
