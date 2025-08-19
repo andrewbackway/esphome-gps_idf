@@ -90,9 +90,11 @@ namespace esphome
 
         void GPSIDFComponent::dump_config()
         {
-            ESP_LOGCONFIG(TAG, "GPS Tiny (TinyGPS++)");
-            LOG_UART_DEVICE(this);
-            ESP_LOGCONFIG(TAG, "publish_only_on_fix: %s", YESNO(this->publish_only_on_fix_));
+            ESP_LOGCONFIG(TAG, "GPS IDF (TinyGPS++)");
+            ESP_LOGCONFIG(TAG, "  RX pin: %d", this->get_rx_pin());
+            ESP_LOGCONFIG(TAG, "  TX pin: %d", this->get_tx_pin());
+            ESP_LOGCONFIG(TAG, "  Baud rate: %d", this->get_baud_rate());
+            ESP_LOGCONFIG(TAG, "  publish_only_on_fix: %s", YESNO(this->publish_only_on_fix_));
         }
 
     } // namespace gps_tiny
