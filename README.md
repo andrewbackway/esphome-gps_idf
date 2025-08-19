@@ -1,4 +1,4 @@
-# ESPHome GPS-IDF Component
+# ESPHome GPS External Component (ESP-IDF)
 
 This is an ESPHome external component for processing NMEA GPS data using the on ESP32 devices, unlike the in built ESPHome GPS component, this works on ESP-IDF framework.  It parses NMEA sentences (GGA and RMC) from a GPS module connected via UART and exposes various GPS data as sensors and text sensors in ESPHome.
 
