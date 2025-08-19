@@ -1,7 +1,6 @@
 # ESPHome GPS-IDF Component
 
-This is an ESPHome external component for processing NMEA GPS data using the on ESP32 devices, unlike the in built ESPHome GPS component, this works on ESP-IDF framework.  
-It parses NMEA sentences (GGA and RMC) from a GPS module connected via UART and exposes various GPS data as sensors and text sensors in ESPHome.
+This is an ESPHome external component for processing NMEA GPS data using the on ESP32 devices, unlike the in built ESPHome GPS component, this works on ESP-IDF framework.  It parses NMEA sentences (GGA and RMC) from a GPS module connected via UART and exposes various GPS data as sensors and text sensors in ESPHome.
 
 ## Features
 
@@ -25,7 +24,7 @@ It parses NMEA sentences (GGA and RMC) from a GPS module connected via UART and 
 
 - ESPHome 2025.5.0 or later
 - ESP32-based board (e.g., ESP32 DevKit)
-- GPS module with UART interface (e.g., NEO-6M, NEO-7M)
+- GPS module with UART interface (e.g., NEO-M8N, NEO-6M, NEO-7M)
 - UART connection between the ESP32 and GPS module
 
 ## Installation
@@ -35,7 +34,6 @@ It parses NMEA sentences (GGA and RMC) from a GPS module connected via UART and 
 ```yaml
 external_components:
   - source: github://andrewbackway/esphome-gps-idf
-    refresh: 1s
 ```
 
 2. Configure the UART and GPS-IDF component in your YAML file (see the example below).
@@ -72,8 +70,7 @@ web_server:
   local: true
 
 external_components:
-  - source: github://andrewbackway/esphome-gps-idf
-    refresh: 1s
+  - source: github://andrewbackway/esphome-gps-idf\
 
 uart:
   - id: uart_gps
