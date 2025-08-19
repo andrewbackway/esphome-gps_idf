@@ -1,4 +1,3 @@
-```cpp
 #include "gps-idf.h"
 
 #include "esphome/core/log.h"
