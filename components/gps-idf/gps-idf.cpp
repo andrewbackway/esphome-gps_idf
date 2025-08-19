@@ -11,6 +11,10 @@ void GPSIDFComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up GPS-IDF component...");
   this->buffer_.reserve(256);  // Reserve buffer for NMEA sentences
 
+  if (udp_broadcast_enabled_) {
+    setup_udp_broadcast();
+  }
+
   // Create FreeRTOS task for GPS processing
   BaseType_t result = xTaskCreate(
       gps_task, "gps_task", 4096, this, 5, &this->gps_task_handle_);
@@ -19,6 +23,31 @@ void GPSIDFComponent::setup() {
   } else {
     ESP_LOGI(TAG, "GPS task created successfully");
   }
+}
+
+void GPSIDFComponent::setup_udp_broadcast() {
+  ESP_LOGCONFIG(TAG, "Setting up UDP broadcast to %s:%d", udp_broadcast_address_.c_str(), udp_broadcast_port_);
+  
+  udp_socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  if (udp_socket_ < 0) {
+    ESP_LOGE(TAG, "Failed to create UDP socket");
+    return;
+  }
+
+  int broadcast = 1;
+  if (setsockopt(udp_socket_, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast)) < 0) {
+    ESP_LOGE(TAG, "Failed to enable broadcast");
+    close(udp_socket_);
+    udp_socket_ = -1;
+    return;
+  }
+
+  memset(&udp_dest_addr_, 0, sizeof(udp_dest_addr_));
+  udp_dest_addr_.sin_family = AF_INET;
+  udp_dest_addr_.sin_port = htons(udp_broadcast_port_);
+  udp_dest_addr_.sin_addr.s_addr = inet_addr(udp_broadcast_address_.c_str());
+
+  ESP_LOGI(TAG, "UDP broadcast setup complete");
 }
 
 void GPSIDFComponent::gps_task(void *pvParameters) {
@@ -50,15 +79,51 @@ void GPSIDFComponent::dump_config() {
   LOG_SENSOR("  ", "HDOP", this->hdop_sensor_);
   LOG_TEXT_SENSOR("  ", "DateTime", this->datetime_sensor_);
   LOG_TEXT_SENSOR("  ", "Fix Status", this->fix_status_sensor_);
+  if (udp_broadcast_enabled_) {
+    ESP_LOGCONFIG(TAG, "  UDP Broadcast: Enabled, Address: %s, Port: %d, Interval: %d ms",
+                  udp_broadcast_address_.c_str(), udp_broadcast_port_, udp_broadcast_interval_ms_);
+    ESP_LOGCONFIG(TAG, "  UDP Sentence Filter: %s", vector_to_string(udp_broadcast_sentence_filter_).c_str());
+  } else {
+    ESP_LOGCONFIG(TAG, "  UDP Broadcast: Disabled");
+  }
 }
 
 void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
   ESP_LOGD(TAG, "Received NMEA: %s", sentence.c_str());
 
+  if (udp_broadcast_enabled_) {
+    TickType_t current_ticks = xTaskGetTickCount();
+    if ((current_ticks - last_broadcast_ticks_) * portTICK_PERIOD_MS >= udp_broadcast_interval_ms_) {
+      for (const auto &filter : udp_broadcast_sentence_filter_) {
+        if (sentence.rfind("$" + filter, 0) == 0 || sentence.rfind("$GN" + filter, 0) == 0) {
+          send_udp_broadcast(sentence);
+          last_broadcast_ticks_ = current_ticks;
+          break;
+        }
+      }
+    }
+  }
+
   if (sentence.rfind("$GPGGA", 0) == 0 || sentence.rfind("$GNGGA", 0) == 0) {
     parse_gga(sentence);
   } else if (sentence.rfind("$GPRMC", 0) == 0 || sentence.rfind("$GNRMC", 0) == 0) {
     parse_rmc(sentence);
+  }
+}
+
+void GPSIDFComponent::send_udp_broadcast(const std::string &sentence) {
+  if (udp_socket_ < 0) {
+    ESP_LOGW(TAG, "UDP socket not initialized, skipping broadcast");
+    return;
+  }
+
+  std::string message = sentence + "\r\n";
+  int err = sendto(udp_socket_, message.c_str(), message.length(), 0,
+                   (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
+  if (err < 0) {
+    ESP_LOGE(TAG, "Failed to send UDP broadcast: %d", err);
+  } else {
+    ESP_LOGD(TAG, "Sent UDP broadcast: %s", sentence.c_str());
   }
 }
 
@@ -181,6 +246,17 @@ void GPSIDFComponent::clear_sensors() {
   if (this->satellites_sensor_) this->satellites_sensor_->publish_state(NAN);
   if (this->hdop_sensor_) this->hdop_sensor_->publish_state(NAN);
   if (this->datetime_sensor_) this->datetime_sensor_->publish_state("");
+}
+
+std::string GPSIDFComponent::vector_to_string(const std::vector<std::string> &vec) {
+  std::string result;
+  for (size_t i = 0; i < vec.size(); ++i) {
+    result += vec[i];
+    if (i < vec.size() - 1) {
+      result += ", ";
+    }
+  }
+  return result;
 }
 
 }  // namespace gps_idf

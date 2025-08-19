@@ -3,6 +3,9 @@
 #include <driver/uart.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <string>
 #include <vector>
@@ -31,6 +34,11 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
   void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
   void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
+  void set_udp_broadcast_enabled(bool enabled) { udp_broadcast_enabled_ = enabled; }
+  void set_udp_broadcast_port(uint16_t port) { udp_broadcast_port_ = port; }
+  void set_udp_broadcast_address(const std::string &address) { udp_broadcast_address_ = address; }
+  void set_udp_broadcast_interval(uint32_t interval_ms) { udp_broadcast_interval_ms_ = interval_ms; }
+  void add_udp_broadcast_sentence_filter(const std::string &sentence) { udp_broadcast_sentence_filter_.push_back(sentence); }
 
  protected:
   sensor::Sensor *latitude_sensor_{nullptr};
@@ -47,12 +55,24 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   bool has_fix_{false};
   TaskHandle_t gps_task_handle_{nullptr};
 
+  // UDP broadcast configuration
+  bool udp_broadcast_enabled_{false};
+  uint16_t udp_broadcast_port_{10110};
+  std::string udp_broadcast_address_{"255.255.255.255"};
+  uint32_t udp_broadcast_interval_ms_{15000};
+  std::vector<std::string> udp_broadcast_sentence_filter_{"GPGGA", "GPRMC"};
+  int udp_socket_{-1};
+  struct sockaddr_in udp_dest_addr_;
+  TickType_t last_broadcast_ticks_{0};
+
   void process_nmea_sentence(const std::string &sentence);
   void parse_gga(const std::string &sentence);
   void parse_rmc(const std::string &sentence);
   std::vector<std::string> split(const std::string &str, char delimiter);
   float parse_coord(const std::string &value, const std::string &direction);
   void clear_sensors();
+  void setup_udp_broadcast();
+  void send_udp_broadcast(const std::string &sentence);
 
   static void gps_task(void *pvParameters);
 };

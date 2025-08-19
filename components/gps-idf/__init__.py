@@ -1,13 +1,23 @@
-from esphome.components import sensor, text_sensor, uart
+from esphome.components import sensor, text_sensor, udp, uart
 import esphome.config_validation as cv
 import esphome.codegen as cg
 
-DEPENDENCIES = ["uart"]
+DEPENDENCIES = ["uart", "wifi"]
 AUTO_LOAD = ["sensor", "text_sensor"]
 
 nmea_gps_ns = cg.esphome_ns.namespace("gps_idf")
 NMEAGPSComponent = nmea_gps_ns.class_(
     "GPSIDFComponent", cg.Component, uart.UARTDevice
+)
+
+UDP_BROADCAST_SCHEMA = cv.Schema(
+    {
+        cv.Optional("enabled", default=False): cv.boolean,
+        cv.Optional("port", default=10110): cv.port,
+        cv.Optional("broadcast_address", default="255.255.255.255"): cv.string,
+        cv.Optional("sentence_filter", default=["GPGGA", "GPRMC"]): cv.ensure_list(cv.string),
+        cv.Optional("interval", default="15s"): cv.positive_time_period_seconds,
+    }
 )
 
 CONFIG_SCHEMA = cv.Schema(
@@ -42,6 +52,7 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Optional("datetime"): text_sensor.text_sensor_schema(),
         cv.Optional("fix_status"): text_sensor.text_sensor_schema(),
+        cv.Optional("udp_broadcast"): UDP_BROADCAST_SCHEMA,
     }
 ).extend(cv.COMPONENT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA)
 
@@ -77,3 +88,11 @@ async def to_code(config):
     if "fix_status" in config:
         sens = await text_sensor.new_text_sensor(config["fix_status"])
         cg.add(var.set_fix_status_sensor(sens))
+    if "udp_broadcast" in config:
+        udp_config = config["udp_broadcast"]
+        cg.add(var.set_udp_broadcast_enabled(udp_config["enabled"]))
+        cg.add(var.set_udp_broadcast_port(udp_config["port"]))
+        cg.add(var.set_udp_broadcast_address(udp_config["broadcast_address"]))
+        cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
+        for sentence in udp_config["sentence_filter"]:
+            cg.add(var.add_udp_broadcast_sentence_filter(sentence))
