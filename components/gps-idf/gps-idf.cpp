@@ -1,5 +1,11 @@
 #include "gps-idf.h"
 
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include "esphome/core/log.h"
 
 namespace esphome {

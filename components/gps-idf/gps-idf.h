@@ -5,9 +5,10 @@
 #include <freertos/task.h>
 
 // Include ESP-IDF socket headers with angle brackets
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
-#include <lwip/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include <string>
 #include <vector>
