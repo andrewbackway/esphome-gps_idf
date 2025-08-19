@@ -5,9 +5,9 @@ import esphome.codegen as cg
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["sensor", "text_sensor"]
 
-nmea_gps_ns = cg.esphome_ns.namespace("nmea_gps")
+nmea_gps_ns = cg.esphome_ns.namespace("gps_idf")
 NMEAGPSComponent = nmea_gps_ns.class_(
-    "NMEAGPSComponent", cg.Component, uart.UARTDevice
+    "GPSIDFComponent", cg.Component, uart.UARTDevice
 )
 
 CONFIG_SCHEMA = cv.Schema(
