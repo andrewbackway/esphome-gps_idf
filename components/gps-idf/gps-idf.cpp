@@ -50,13 +50,10 @@ void GPSIDFComponent::dump_config() {
   LOG_SENSOR("  ", "HDOP", this->hdop_sensor_);
   LOG_TEXT_SENSOR("  ", "DateTime", this->datetime_sensor_);
   LOG_TEXT_SENSOR("  ", "Fix Status", this->fix_status_sensor_);
-  ESP_LOGCONFIG(TAG, "  Verbose Logging: %s", this->verbose_logging_ ? "ON" : "OFF");
 }
 
 void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
-  if (this->verbose_logging_) {
-    ESP_LOGD(TAG, "Received NMEA: %s", sentence.c_str());
-  }
+  ESP_LOGD(TAG, "Received NMEA: %s", sentence.c_str());
 
   if (sentence.rfind("$GPGGA", 0) == 0 || sentence.rfind("$GNGGA", 0) == 0) {
     parse_gga(sentence);
@@ -68,9 +65,7 @@ void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
 void GPSIDFComponent::parse_gga(const std::string &sentence) {
   auto fields = split(sentence, ',');
   if (fields.size() < 10) {
-    if (this->verbose_logging_) {
-      ESP_LOGW(TAG, "Invalid GGA sentence: too few fields");
-    }
+    ESP_LOGD(TAG, "Invalid GGA sentence: too few fields");
     clear_sensors();
     return;
   }
@@ -117,16 +112,12 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
 void GPSIDFComponent::parse_rmc(const std::string &sentence) {
   auto fields = split(sentence, ',');
   if (fields.size() < 12) {
-    if (this->verbose_logging_) {
-      ESP_LOGW(TAG, "Invalid RMC sentence: too few fields");
-    }
+    ESP_LOGD(TAG, "Invalid RMC sentence: too few fields");
     return;
   }
 
   if (fields[2] != "A") {
-    if (this->verbose_logging_) {
-      ESP_LOGW(TAG, "RMC data invalid (status: %s)", fields[2].c_str());
-    }
+    ESP_LOGD(TAG, "RMC data invalid (status: %s)", fields[2].c_str());
     return;
   }
 

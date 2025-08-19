@@ -31,7 +31,6 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
   void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
   void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
-  void set_verbose_logging(bool verbose) { verbose_logging_ = verbose; }
 
  protected:
   sensor::Sensor *latitude_sensor_{nullptr};
@@ -43,7 +42,6 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   sensor::Sensor *hdop_sensor_{nullptr};
   text_sensor::TextSensor *datetime_sensor_{nullptr};
   text_sensor::TextSensor *fix_status_sensor_{nullptr};
-  bool verbose_logging_{false};
 
   std::string buffer_;
   bool has_fix_{false};

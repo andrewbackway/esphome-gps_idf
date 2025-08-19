@@ -14,7 +14,6 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(NMEAGPSComponent),
         cv.Required(cv.GenerateID("uart_id")): cv.use_id(uart.UARTComponent),
-        cv.Optional("verbose_logging", default=False): cv.boolean,
         cv.Optional("latitude"): sensor.sensor_schema(
             unit_of_measurement="°",
             accuracy_decimals=6,
@@ -78,5 +77,3 @@ async def to_code(config):
     if "fix_status" in config:
         sens = await text_sensor.new_text_sensor(config["fix_status"])
         cg.add(var.set_fix_status_sensor(sens))
-    if "verbose_logging" in config:
-        cg.add(var.set_verbose_logging(config["verbose_logging"]))
