@@ -1,3 +1,4 @@
+```cpp
 #include "gps-idf.h"
 
 #include "esphome/core/log.h"
@@ -50,7 +51,7 @@ void GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGI(TAG, "UDP broadcast setup complete");
 }
 
-void GPSIDFComponent::gps_task(void *pvParameters) {
+void GPSIDFComponent::gps_task attributing (void *pvParameters) {
   GPSIDFComponent *gps = static_cast<GPSIDFComponent *>(pvParameters);
   while (true) {
     while (gps->available()) {
@@ -261,3 +262,4 @@ std::string GPSIDFComponent::vector_to_string(const std::vector<std::string> &ve
 
 }  // namespace gps_idf
 }  // namespace esphome
+```

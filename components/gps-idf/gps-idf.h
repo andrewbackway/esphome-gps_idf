@@ -1,11 +1,14 @@
+```cpp
 #pragma once
 
 #include <driver/uart.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
+// Include ESP-IDF socket headers
+#include "lwip/sockets.h"
+#include "lwip/netdb.h"
+#include "lwip/inet.h"
 
 #include <string>
 #include <vector>
@@ -73,9 +76,11 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void clear_sensors();
   void setup_udp_broadcast();
   void send_udp_broadcast(const std::string &sentence);
+  std::string vector_to_string(const std::vector<std::string> &vec);
 
   static void gps_task(void *pvParameters);
 };
 
 }  // namespace gps_idf
 }  // namespace esphome
+```

@@ -66,3 +66,9 @@ gps-idf:
     name: "GPS DateTime"
   fix_status:
     name: "GPS Fix Status"
+  udp_broadcast:
+    enabled: true
+    port: 10110
+    broadcast_address: "255.255.255.255"
+    sentence_filter: ["GPGGA", "GPRMC"]
+    interval: 15s
