@@ -143,4 +143,4 @@ gps-idf:
 - **ESPHome logs errors**: Enable `logger` in your YAML configuration to see detailed logs for debugging.
 - **Task creation failure**: Ensure sufficient memory is available on the ESP32 (the task uses a 4KB stack).
 
-*Developed with Grok, and a not to much troubleshooting for the ESPHome community.*
+*Developed with Grok, and with a little troubleshooting*
