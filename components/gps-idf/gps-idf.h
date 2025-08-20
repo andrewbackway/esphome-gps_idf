@@ -75,7 +75,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   std::vector<std::string> split(const std::string &str, char delimiter);
   float parse_coord(const std::string &value, const std::string &direction);
   void clear_sensors();
-  void setup_udp_broadcast();
+  bool setup_udp_broadcast();
   void send_udp_broadcast(const std::string &sentence);
   void queue_udp_sentence(const std::string &sentence);
   void flush_udp_broadcast();

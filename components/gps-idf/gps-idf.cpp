@@ -53,11 +53,13 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           if (self->udp_broadcast_enabled_) {
             ESP_LOGI(TAG, "UDP Enabled");
             if (self->udp_socket_ < 0 ) {
+              ESP_LOGI(TAG, "Setting up UDP");
               self->setup_udp_broadcast();
+            } else {
+              ESP_LOGI(TAG, "Connected to UDP");
+              self->queue_udp_sentence(sentence);
+              self->flush_udp_broadcast();
             }
-
-            self->queue_udp_sentence(sentence);
-            self->flush_udp_broadcast();
           }
 
           sentence.clear();
@@ -145,13 +147,13 @@ float GPSIDFComponent::parse_coord(const std::string &value, const std::string &
   return static_cast<float>(coord);
 }
 
-void GPSIDFComponent::setup_udp_broadcast() {
+bool GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGI(TAG, "Setting up UDP broadcast");
 
   udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
     ESP_LOGE(TAG, "Failed to create UDP socket");
-    return;
+    return false;
   }
 
   udp_dest_addr_.sin_family = AF_INET;
@@ -159,6 +161,8 @@ void GPSIDFComponent::setup_udp_broadcast() {
   udp_dest_addr_.sin_addr.s_addr = inet_addr(udp_broadcast_address_.c_str());
 
   ESP_LOGI(TAG, "UDP broadcast setup complete");
+
+  return true;
 }
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
