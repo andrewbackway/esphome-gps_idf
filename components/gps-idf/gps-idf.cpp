@@ -10,6 +10,7 @@ void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
   // Start FreeRTOS task for GPS parsing
+  /*
   xTaskCreatePinnedToCore(
       gps_task,           // task entry
       "gps_task",         // task name
@@ -18,7 +19,7 @@ void GPSIDFComponent::setup() {
       1,                  // priority
       &gps_task_handle_,  // task handle
       1                   // run on core 1
-  );
+  ); */
 
   if (udp_broadcast_enabled_) {
     setup_udp_broadcast();
