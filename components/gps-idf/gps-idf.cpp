@@ -164,11 +164,20 @@ bool GPSIDFComponent::setup_udp_broadcast() {
   }
   ESP_LOGI(TAG, "SO_BROADCAST option set successfully");
 
+ // Set the destination address
   udp_dest_addr_.sin_family = AF_INET;
   udp_dest_addr_.sin_port = htons(udp_broadcast_port_);
-  udp_dest_addr_.sin_addr.s_addr = inet_addr(udp_broadcast_address_.c_str());
 
-  ESP_LOGI(TAG, "UDP broadcast setup complete");
+  // Convert the string address to a network address
+  if (inet_aton(udp_broadcast_address_.c_str(), &udp_dest_addr_.sin_addr) == 0) {
+    ESP_LOGE(TAG, "Failed to convert broadcast address: %s", udp_broadcast_address_.c_str());
+    close(udp_socket_);
+    udp_socket_ = -1;
+    return false;
+  }
+
+  ESP_LOGI(TAG, "UDP broadcast setup complete. Sending to %s:%d",
+           udp_broadcast_address_.c_str(), udp_broadcast_port_);
 
   return true;
 }
