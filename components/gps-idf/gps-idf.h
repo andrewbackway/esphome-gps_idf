@@ -55,6 +55,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   text_sensor::TextSensor *fix_status_sensor_{nullptr};
 
   std::string buffer_;
+  std::vector<std::string> udp_queue_;
   bool has_fix_{false};
   TaskHandle_t gps_task_handle_{nullptr};
 
@@ -76,6 +77,8 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void clear_sensors();
   void setup_udp_broadcast();
   void send_udp_broadcast(const std::string &sentence);
+  void queue_udp_sentence(const std::string &sentence);
+  void flush_udp_broadcast();
   std::string vector_to_string(const std::vector<std::string> &vec);
 
   static void gps_task(void *pvParameters);
