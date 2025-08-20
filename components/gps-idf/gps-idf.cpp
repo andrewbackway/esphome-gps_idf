@@ -184,7 +184,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 }
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
-  udp_queue_.push_back(sentence + "\r\n");
+  udp_queue_.push_back(sentence);
 }
 
 void GPSIDFComponent::flush_udp_broadcast() {
@@ -226,7 +226,7 @@ void GPSIDFComponent::flush_udp_broadcast() {
     inet_ntoa_r(udp_dest_addr_.sin_addr.s_addr, ip_str, INET_ADDRSTRLEN);
     ESP_LOGD(TAG, "flush_udp_broadcast: Destination address: %s:%d", ip_str, ntohs(udp_dest_addr_.sin_port));
 
-    int bytes_sent = sendto(udp_socket_, s.c_str(), s.size(), 0,
+    int bytes_sent = sendto(udp_socket_, s.c_str() + "\r\n", s.size(), 0,
                             (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
     
     if (bytes_sent < 0) {
