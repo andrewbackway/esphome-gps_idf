@@ -6,6 +6,7 @@ namespace esphome {
 namespace gps_idf {
 
 static const char *const TAG = "gps_idf";
+static const size_t MAX_UDP_QUEUE_SIZE = 20;
 
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
@@ -198,7 +199,14 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   // Append CRLF to the sentence before queueing for UDP broadcast
-  udp_queue_.push_back(sentence + "\r\n");
+  std::string full_sentence = sentence + "\r\n";
+
+  // If the queue is full, remove the oldest element to make space.
+  if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
+    ESP_LOGV(TAG, "UDP queue full. Dropping oldest sentence to make space.");
+    udp_queue_.erase(udp_queue_.begin());
+  }
+  udp_queue_.push_back(full_sentence);
 }
 
 void GPSIDFComponent::flush_udp_broadcast() {
