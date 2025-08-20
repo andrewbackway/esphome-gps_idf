@@ -142,7 +142,7 @@ float GPSIDFComponent::parse_coord(const std::string &value, const std::string &
 }
 
 void GPSIDFComponent::setup_udp_broadcast() {
-  udp_socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+  udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
     ESP_LOGE(TAG, "Failed to create UDP socket");
     return;
