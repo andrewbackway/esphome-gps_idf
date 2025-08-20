@@ -25,6 +25,7 @@ namespace gps_idf {
 class GPSIDFComponent : public Component, public uart::UARTDevice {
  public:
   void setup() override;
+  void loop() override;
   void dump_config() override;
 
   // Setters for YAML configuration
