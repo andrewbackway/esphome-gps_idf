@@ -40,9 +40,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
   while (true) {
     while (self->available()) 
     {
-      if (udp_socket_ < 0 && udp_broadcast_enabled_) {
-        setup_udp_broadcast();
-      }
       char c;
       self->read_byte(reinterpret_cast<uint8_t *>(&c));
 
@@ -52,6 +49,10 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           self->process_nmea_sentence(sentence);
 
           if (self->udp_broadcast_enabled_) {
+            if (self->udp_socket_ < 0 ) {
+              self->setup_udp_broadcast();
+            }
+
             self->queue_udp_sentence(sentence);
             self->flush_udp_broadcast();
           }
