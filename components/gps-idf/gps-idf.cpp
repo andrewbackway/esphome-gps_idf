@@ -49,13 +49,14 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           self->process_nmea_sentence(sentence);
 
           ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
-
-          if (self->udp_broadcast_enabled_) {
-            if (self->udp_socket_ < 0 ) {
-              self->setup_udp_broadcast();
-            } else {
-              self->queue_udp_sentence(sentence);
-              self->flush_udp_broadcast();
+          if (esphome::wifi::is_connected()) {
+            if (self->udp_broadcast_enabled_) {
+              if (self->udp_socket_ < 0 ) {
+                self->setup_udp_broadcast();
+              } else {
+                self->queue_udp_sentence(sentence);
+                self->flush_udp_broadcast();
+              }
             }
           }
 
