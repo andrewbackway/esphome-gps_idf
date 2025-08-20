@@ -184,7 +184,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 }
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
-  udp_queue_.push_back(sentence);
+  udp_queue_.push_back(sentence + "\r\n");
 }
 
 void GPSIDFComponent::flush_udp_broadcast() {
