@@ -168,7 +168,7 @@ void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   udp_queue_.push_back(sentence);
 }
 
-oid GPSIDFComponent::flush_udp_broadcast() {
+void GPSIDFComponent::flush_udp_broadcast() {
   if (udp_socket_ < 0) {
     ESP_LOGE(TAG, "flush_udp_broadcast: UDP socket is invalid (%d)", udp_socket_);
     return;
