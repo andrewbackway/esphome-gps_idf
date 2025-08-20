@@ -53,7 +53,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           if (self->udp_broadcast_enabled_) {
             ESP_LOGI(TAG, "UDP Enabled");
             if (self->udp_socket_ < 0 ) {
-              ESP_LOGI(TAG, "Setting up UDP");
               self->setup_udp_broadcast();
             } else {
               ESP_LOGI(TAG, "Connected to UDP");
@@ -169,21 +168,63 @@ void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   udp_queue_.push_back(sentence);
 }
 
-void GPSIDFComponent::flush_udp_broadcast() {
-  if (udp_socket_ < 0 || udp_queue_.empty()) return;
+oid GPSIDFComponent::flush_udp_broadcast() {
+  if (udp_socket_ < 0) {
+    ESP_LOGE(TAG, "flush_udp_broadcast: UDP socket is invalid (%d)", udp_socket_);
+    return;
+  }
+
+  if (udp_queue_.empty()) {
+    ESP_LOGD(TAG, "flush_udp_broadcast: UDP queue is empty, nothing to send.");
+    return;
+  }
 
   TickType_t now = xTaskGetTickCount();
-  if (now - last_broadcast_ticks_ < pdMS_TO_TICKS(udp_broadcast_interval_ms_)) {
-    return;  // not time yet
+  TickType_t ticks_since_last_broadcast = now - last_broadcast_ticks_;
+  TickType_t interval_ticks = pdMS_TO_TICKS(udp_broadcast_interval_ms_);
+
+  if (ticks_since_last_broadcast < interval_ticks) {
+    ESP_LOGD(TAG, "flush_udp_broadcast: Not time to send yet. %lu ticks since last broadcast, minimum interval is %lu ticks.",
+             ticks_since_last_broadcast, interval_ticks);
+    return;
   }
   last_broadcast_ticks_ = now;
 
+  int total_bytes_sent = 0;
+  int packets_sent = 0;
+
   for (auto &s : udp_queue_) {
-    ESP_LOGI(TAG, "Sending UDP broadcast: %s", s.c_str());
-    sendto(udp_socket_, s.c_str(), s.size(), 0,
-           (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
+    ESP_LOGI(TAG, "Sending UDP broadcast (packet %d of %zu): %s", packets_sent + 1, udp_queue_.size(), s.c_str());
+
+    // Check if the string is empty before attempting to send
+    if (s.empty()) {
+      ESP_LOGW(TAG, "flush_udp_broadcast: Skipping empty string in queue.");
+      continue;
+    }
+
+    // Convert sockaddr_in to a more readable string for logging
+    char ip_str[INET_ADDRSTRLEN];
+    inet_ntoa_r(udp_dest_addr_.sin_addr.s_addr, ip_str, INET_ADDRSTRLEN);
+    ESP_LOGD(TAG, "flush_udp_broadcast: Destination address: %s:%d", ip_str, ntohs(udp_dest_addr_.sin_port));
+
+    int bytes_sent = sendto(udp_socket_, s.c_str(), s.size(), 0,
+                            (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
+    
+    if (bytes_sent < 0) {
+      int err = errno;
+      ESP_LOGE(TAG, "flush_udp_broadcast: Failed to send UDP packet. Error code: %d, Error message: %s", err, strerror(err));
+      // Optionally, you could break here if a single failure is critical
+      // break; 
+    } else {
+      ESP_LOGD(TAG, "flush_udp_broadcast: Successfully sent %d bytes.", bytes_sent);
+      total_bytes_sent += bytes_sent;
+      packets_sent++;
+    }
   }
+
+  ESP_LOGI(TAG, "flush_udp_broadcast: Finished sending. Sent %d packets, %d total bytes.", packets_sent, total_bytes_sent);
   udp_queue_.clear();
+  ESP_LOGD(TAG, "flush_udp_broadcast: UDP queue cleared.");
 }
 
 }  // namespace gps_idf
