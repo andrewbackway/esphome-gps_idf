@@ -9,9 +9,7 @@ static const char *const TAG = "gps_idf";
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
-  return;
   // Start FreeRTOS task for GPS parsing
-
   xTaskCreatePinnedToCore(
       gps_task,           // task entry
       "gps_task",         // task name
@@ -21,10 +19,6 @@ void GPSIDFComponent::setup() {
       &gps_task_handle_,  // task handle
       1                   // run on core 1
   ); 
-
-  if (udp_broadcast_enabled_) {
-    setup_udp_broadcast();
-  }
 }
 
 void GPSIDFComponent::dump_config() {
@@ -44,7 +38,11 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
   sentence.reserve(128);
 
   while (true) {
-    while (self->available()) {
+    while (self->available()) 
+    {
+      if (udp_socket_ < 0 && udp_broadcast_enabled_) {
+        setup_udp_broadcast();
+      }
       char c;
       self->read_byte(reinterpret_cast<uint8_t *>(&c));
 
