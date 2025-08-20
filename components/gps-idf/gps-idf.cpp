@@ -51,6 +51,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
 
           if (self->udp_broadcast_enabled_) {
+            ESP_LOGI(TAG, "UDP Enabled");
             if (self->udp_socket_ < 0 ) {
               self->setup_udp_broadcast();
             }
@@ -146,7 +147,7 @@ float GPSIDFComponent::parse_coord(const std::string &value, const std::string &
 
 void GPSIDFComponent::setup_udp_broadcast() {
   ESP_LOGI(TAG, "Setting up UDP broadcast");
-  
+
   udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
     ESP_LOGE(TAG, "Failed to create UDP socket");
@@ -174,6 +175,7 @@ void GPSIDFComponent::flush_udp_broadcast() {
   last_broadcast_ticks_ = now;
 
   for (auto &s : udp_queue_) {
+    ESP_LOGI(TAG, "Sending UDP broadcast: %s", s.c_str());
     sendto(udp_socket_, s.c_str(), s.size(), 0,
            (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
   }
