@@ -51,11 +51,9 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
 
           if (self->udp_broadcast_enabled_) {
-            ESP_LOGI(TAG, "UDP Enabled");
             if (self->udp_socket_ < 0 ) {
               self->setup_udp_broadcast();
             } else {
-              ESP_LOGI(TAG, "Connected to UDP");
               self->queue_udp_sentence(sentence);
               self->flush_udp_broadcast();
             }
@@ -154,6 +152,17 @@ bool GPSIDFComponent::setup_udp_broadcast() {
     ESP_LOGE(TAG, "Failed to create UDP socket");
     return false;
   }
+
+  // Enable the SO_BROADCAST option for the socket
+  int broadcast_enable = 1;
+  int ret = setsockopt(udp_socket_, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable));
+  if (ret < 0) {
+    ESP_LOGE(TAG, "Failed to set SO_BROADCAST option, errno: %d", errno);
+    close(udp_socket_); // Clean up the socket
+    udp_socket_ = -1;
+    return false;
+  }
+  ESP_LOGI(TAG, "SO_BROADCAST option set successfully");
 
   udp_dest_addr_.sin_family = AF_INET;
   udp_dest_addr_.sin_port = htons(udp_broadcast_port_);
