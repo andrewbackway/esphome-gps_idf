@@ -109,6 +109,8 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                   self->queue_udp_sentence(sentence);
                 }
               }
+            } else if (self->udp_socket_ > -1) {
+                close(self->udp_socket_);
             }
           }
 
