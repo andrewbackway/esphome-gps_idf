@@ -209,7 +209,7 @@ float GPSIDFComponent::parse_coord(const std::string &value,
 }
 
 bool GPSIDFComponent::setup_udp_broadcast() {
-  ESP_LOGD(TAG, "Setting up UDP broadcast");
+  ESP_LOGI(TAG, "Setting up UDP broadcast");
 
   udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
@@ -243,7 +243,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
     return false;
   }
 
-  ESP_LOGD(TAG, "UDP broadcast setup complete.");
+  ESP_LOGI(TAG, "UDP broadcast setup complete.");
 
   return true;
 }
