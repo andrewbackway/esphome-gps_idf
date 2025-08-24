@@ -70,7 +70,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   uint16_t udp_broadcast_port_{10110};
   std::string udp_broadcast_address_{"255.255.255.255"};
   uint32_t udp_broadcast_interval_ms_{15000};
-  std::vector<std::string> udp_broadcast_sentence_filter_{"GPGGA", "GPRMC"};
+  std::vector<std::string> udp_broadcast_sentence_filter_;
   int udp_socket_{-1};
   struct sockaddr_in udp_dest_addr_;
   TickType_t last_broadcast_ticks_{0};

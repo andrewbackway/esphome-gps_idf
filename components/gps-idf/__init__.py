@@ -15,7 +15,7 @@ UDP_BROADCAST_SCHEMA = cv.Schema(
         cv.Optional("enabled", default=False): cv.boolean,
         cv.Optional("port", default=10110): cv.port,
         cv.Optional("broadcast_address", default="255.255.255.255"): cv.string,
-        cv.Optional("sentence_filter", default=["GPGGA", "GPRMC"]): cv.ensure_list(cv.string),
+        cv.Optional("sentence_filter", default=[]): cv.ensure_list(cv.string),
         cv.Optional("interval", default="15s"): cv.positive_time_period_seconds,
     }
 )

@@ -15,9 +15,12 @@ static const size_t MAX_UDP_PAYLOAD = 1400; // safe typical UDP payload
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
-  ESP_LOGI(TAG, "Filters in setup():");
-  for (auto &f : udp_broadcast_sentence_filter_) ESP_LOGI(TAG, " - %s", f.c_str());
-  
+  if (udp_broadcast_sentence_filter_.empty()) {
+    ESP_LOGI(TAG, "No filters configured, using defaults GPGGA + GPRMC");
+    udp_broadcast_sentence_filter_.push_back("GPGGA");
+    udp_broadcast_sentence_filter_.push_back("GPRMC");
+  }
+
   // Create mutex for UDP queue access
   udp_queue_mutex_ = xSemaphoreCreateMutex();
   if (!udp_queue_mutex_) {
