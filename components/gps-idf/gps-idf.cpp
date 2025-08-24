@@ -98,12 +98,12 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                 ESP_LOGD(TAG, "Checking filter");
                 // Only queue if no filter configured (empty) OR sentence matches one of the filters
                 // Example filter logic using instance member correctly:
+
                 bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
-                if ( !passes_filter)
-                  ESP_LOGD(TAG, "EMPTY FILTER");
 
                 if (!passes_filter) {
                   for (const auto &f : self->udp_broadcast_sentence_filter_) {
+                    ESP_LOGD(TAG, "Checking filter: %s", f.c_str());
                     if (sentence.find(f) != std::string::npos) {
                       passes_filter = true;
                       break;
