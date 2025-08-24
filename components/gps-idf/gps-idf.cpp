@@ -85,7 +85,16 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
           self->process_nmea_sentence(sentence);
 
           //ESP_LOGD(TAG, "Processed NMEA sentence: %s", sentence.c_str());
-          if (esphome::network::is_connected()) {
+          if (esphome::network::is_connected()) 
+          {
+            if (!self->udp_broadcast_enabled_ && self->udp_socket_ > -1) {
+                ESP_LOGI(TAG, "Closing socket, broadcast no longer required");
+                close(self->udp_socket_);
+                self->udp_socket_ = -1;
+                self->udp_queue_.clear();
+                return;
+            }
+
             if (self->udp_broadcast_enabled_) {
               if (self->udp_socket_ < 0) {
                 self->setup_udp_broadcast();
@@ -109,12 +118,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                   self->queue_udp_sentence(sentence);
                 }
               }
-            } else if (self->udp_socket_ > -1) {
-                ESP_LOGI(TAG, "Closing socket, broadcast no longer required");
-                close(self->udp_socket_);
-                self->udp_socket_ = -1;
-                self->udp_queue_.clear();
-            }
+            } 
           }
 
           sentence.clear();
