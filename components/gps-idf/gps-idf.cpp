@@ -47,7 +47,9 @@ void GPSIDFComponent::dump_config() {
 void GPSIDFComponent::loop() {
   // This function is called repeatedly by the main ESPHome loop.
   // We check if it's time to send the queued UDP data.
-
+  if (udp_broadcast_enabled_ && udp_socket_ >= 0) {
+    flush_udp_broadcast();
+  }
 }
 
 void GPSIDFComponent::gps_task(void *pvParameters) {
