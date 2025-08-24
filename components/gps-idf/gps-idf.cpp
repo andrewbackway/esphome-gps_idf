@@ -84,7 +84,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
         if (!sentence.empty()) {
           self->process_nmea_sentence(sentence);
 
-          ESP_LOGD(TAG, "Processed NMEA sentence: %s", sentence.c_str());
+          //ESP_LOGD(TAG, "Processed NMEA sentence: %s", sentence.c_str());
           if (esphome::network::is_connected()) {
             if (self->udp_broadcast_enabled_) {
               if (self->udp_socket_ < 0) {
@@ -99,14 +99,13 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                   for (const auto &f : self->udp_broadcast_sentence_filter_) {
                     if (sentence.find(f) != std::string::npos) {
                       passes_filter = true;
-                      ESP_LOGD(TAG, "Found");
                       break;
                     }
                   }
                 }
 
                 if (passes_filter) {
-                  ESP_LOGD(TAG, "Sentence passed filter queuing UDP");
+                  //ESP_LOGD(TAG, "Sentence passed filter queuing UDP");
                   self->queue_udp_sentence(sentence);
                 }
               }
@@ -242,7 +241,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   std::string full_sentence = sentence + "\r\n";
-  ESP_LOGD(TAG, "Queueing UDP sentence: %s", full_sentence.c_str());
+  //ESP_LOGD(TAG, "Queueing UDP sentence: %s", full_sentence.c_str());
 
   if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
     if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
