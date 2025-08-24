@@ -106,14 +106,14 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                     ESP_LOGD(TAG, "Checking filter: %s", f.c_str());
                     if (sentence.find(f) != std::string::npos) {
                       passes_filter = true;
+                      ESP_LOGD(TAG, "Found");
                       break;
                     }
                   }
                 }
 
                 if (passes_filter) {
-                  ESP_LOGD(TAG, "Sentence passed filter queuing UDP sentence: %s", sentence.c_str());
-                  // Use the instance method via self
+                  ESP_LOGD(TAG, "Sentence passed filter queuing UDP");
                   self->queue_udp_sentence(sentence);
                 }
               }
