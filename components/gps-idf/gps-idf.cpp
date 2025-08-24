@@ -47,9 +47,7 @@ void GPSIDFComponent::dump_config() {
 void GPSIDFComponent::loop() {
   // This function is called repeatedly by the main ESPHome loop.
   // We check if it's time to send the queued UDP data.
-  if (udp_broadcast_enabled_ && udp_socket_ >= 0) {
-    flush_udp_broadcast();
-  }
+
 }
 
 void GPSIDFComponent::gps_task(void *pvParameters) {
@@ -74,6 +72,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
               if (self->udp_socket_ < 0) {
                 self->setup_udp_broadcast();
               } else {
+                ESP_LOGD(TAG, "Checking filter");
                 // Only queue if no filter configured (empty) OR sentence matches one of the filters
                 // Example filter logic using instance member correctly:
                 bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
@@ -204,7 +203,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
     udp_socket_ = -1;
     return false;
   }
-  ESP_LOGI(TAG, "SO_BROADCAST option set successfully");
+  ESP_LOGD(TAG, "SO_BROADCAST option set successfully");
 
   // Set the destination address
   udp_dest_addr_.sin_family = AF_INET;
@@ -220,8 +219,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
     return false;
   }
 
-  ESP_LOGI(TAG, "UDP broadcast setup complete. Sending to %s:%d",
-           udp_broadcast_address_.c_str(), udp_broadcast_port_);
+  ESP_LOGD(TAG, "UDP broadcast setup complete.");
 
   return true;
 }
@@ -248,7 +246,6 @@ void GPSIDFComponent::flush_udp_broadcast() {
   if (udp_socket_ < 0 || udp_queue_.empty()) {
     return;
   }
-
 
   TickType_t now = xTaskGetTickCount();
   TickType_t interval_ticks = pdMS_TO_TICKS(udp_broadcast_interval_ms_);
