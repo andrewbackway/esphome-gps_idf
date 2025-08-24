@@ -14,6 +14,9 @@ static const size_t MAX_UDP_PAYLOAD = 1400; // safe typical UDP payload
 
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
+
+  ESP_LOGI(TAG, "Filters in setup():");
+  for (auto &f : udp_broadcast_sentence_filter_) ESP_LOGI(TAG, " - %s", f.c_str());
   
   // Create mutex for UDP queue access
   udp_queue_mutex_ = xSemaphoreCreateMutex();
