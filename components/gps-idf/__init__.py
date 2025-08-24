@@ -95,4 +95,4 @@ async def to_code(config):
         cg.add(var.set_udp_broadcast_address(udp_config["broadcast_address"]))
         cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
         for sentence in udp_config["sentence_filter"]:
-            cg.add(var.add_udp_broadcast_sentence_filter(sentence))
+            cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
