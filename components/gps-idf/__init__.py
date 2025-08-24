@@ -94,6 +94,5 @@ async def to_code(config):
         cg.add(var.set_udp_broadcast_port(udp_config["port"]))
         cg.add(var.set_udp_broadcast_address(udp_config["broadcast_address"]))
         cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
-        cg.add(cg.ESP_LOGD("gps_idf", cg.RawExpression(f'"Sentence filter from YAML: {udp_config["sentence_filter"]}"')))
         for sentence in udp_config["sentence_filter"]:
             cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
