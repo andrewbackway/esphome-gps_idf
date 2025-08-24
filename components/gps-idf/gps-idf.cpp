@@ -16,7 +16,7 @@ void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
   if (udp_broadcast_sentence_filter_.empty()) {
-    ESP_LOGI(TAG, "No filters configured, using defaults GPGGA + GPRMC");
+    ESP_LOGI(TAG, "No filters configured, using defaults");
     udp_broadcast_sentence_filter_.push_back("GNGGA");
     udp_broadcast_sentence_filter_.push_back("GNGGA");
     udp_broadcast_sentence_filter_.push_back("GPGGA");
