@@ -46,6 +46,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void set_udp_broadcast_address(const std::string &address) { udp_broadcast_address_ = address; }
   void set_udp_broadcast_interval(uint32_t interval_ms) { udp_broadcast_interval_ms_ = interval_ms; }
   void add_udp_broadcast_sentence_filter(const std::string &sentence) { udp_broadcast_sentence_filter_.push_back(sentence); }
+  void close_udp_broadcast();
 
  protected:
   

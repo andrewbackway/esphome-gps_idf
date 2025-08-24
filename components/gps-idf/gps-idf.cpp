@@ -88,10 +88,7 @@
             if (esphome::network::is_connected()) 
             {
               if (!self->udp_broadcast_enabled_ && self->udp_socket_ > -1) {
-                  ESP_LOGI(TAG, "Closing socket, broadcast no longer required");
-                  close(self->udp_socket_);
-                  self->udp_socket_ = -1;
-                  self->udp_queue_.clear();
+                  self->close_udp_broadcast();
               }
 
               if (self->udp_broadcast_enabled_) {
@@ -131,6 +128,20 @@
       vTaskDelay(10 / portTICK_PERIOD_MS);
     }
   }
+
+  void GPSIDFComponent::close_udp_broadcast() {
+    if (udp_socket_ >= 0) {
+      ESP_LOGI(TAG, "Closing socket, broadcast no longer required");
+      if (xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
+        close(udp_socket_);
+        udp_socket_ = -1;
+        udp_queue_.clear();
+        xSemaphoreGive(udp_queue_mutex_);
+      } else {
+        ESP_LOGW("custom_gps_udp_switch", "Failed to take mutex to clear UDP queue");
+      }
+    }
+  } 
 
   void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
     if (sentence.find("GGA") != std::string::npos) {
@@ -222,8 +233,7 @@
                         sizeof(broadcast_enable));
     if (ret < 0) {
       ESP_LOGE(TAG, "Failed to set SO_BROADCAST option, errno: %d", errno);
-      close(udp_socket_);  // Clean up the socket
-      udp_socket_ = -1;
+      close_udp_broadcast();
       return false;
     }
     //ESP_LOGD(TAG, "SO_BROADCAST option set successfully");
@@ -237,8 +247,7 @@
         0) {
       ESP_LOGE(TAG, "Failed to convert broadcast address: %s",
               udp_broadcast_address_.c_str());
-      close(udp_socket_);
-      udp_socket_ = -1;
+      close_udp_broadcast();
       return false;
     }
 
@@ -308,9 +317,7 @@
       if (bytes_sent < 0) {
         int err = errno;
         ESP_LOGW(TAG, "flush_udp_broadcast: sendto failed: %d %s", err, strerror(err));
-        close(udp_socket_);
-        udp_socket_ = -1;
-        udp_queue_.clear();
+        close_udp_broadcast();
         break;
       } else {
         ESP_LOGI(TAG, "flush_udp_broadcast: sent %d bytes", bytes_sent);
