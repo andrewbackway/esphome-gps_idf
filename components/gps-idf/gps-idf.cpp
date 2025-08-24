@@ -110,7 +110,10 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                 }
               }
             } else if (self->udp_socket_ > -1) {
+                ESP_LOGI(TAG, "Closing socket, broadcast no longer required");
                 close(self->udp_socket_);
+                self->udp_socket_ = -1;
+                self->udp_queue_.clear();
             }
           }
 
@@ -302,6 +305,9 @@ void GPSIDFComponent::flush_udp_broadcast() {
     if (bytes_sent < 0) {
       int err = errno;
       ESP_LOGW(TAG, "flush_udp_broadcast: sendto failed: %d %s", err, strerror(err));
+      close(udp_socket_);
+      udp_socket_ = -1;
+      udp_queue_.clear();
       break;
     } else {
       ESP_LOGI(TAG, "flush_udp_broadcast: sent %d bytes", bytes_sent);
