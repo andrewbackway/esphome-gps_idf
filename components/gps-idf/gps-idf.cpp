@@ -77,6 +77,9 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                 // Only queue if no filter configured (empty) OR sentence matches one of the filters
                 // Example filter logic using instance member correctly:
                 bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
+                if ( !passes_filter)
+                  ESP_LOGD(TAG, "EMPTY FILTER");
+
                 if (!passes_filter) {
                   for (const auto &f : self->udp_broadcast_sentence_filter_) {
                     if (sentence.find(f) != std::string::npos) {
@@ -87,6 +90,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                 }
 
                 if (passes_filter) {
+                  ESP_LOGD(TAG, "Sentence passed filter queuing UDP sentence: %s", sentence.c_str());
                   // Use the instance method via self
                   self->queue_udp_sentence(sentence);
                 }
@@ -224,6 +228,7 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   std::string full_sentence = sentence + "\r\n";
+  ESP_LOGD(TAG, "Queueing UDP sentence: %s", full_sentence.c_str());
 
   if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
     if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
@@ -244,6 +249,7 @@ void GPSIDFComponent::flush_udp_broadcast() {
     return;
   }
 
+
   TickType_t now = xTaskGetTickCount();
   TickType_t interval_ticks = pdMS_TO_TICKS(udp_broadcast_interval_ms_);
 
@@ -252,6 +258,8 @@ void GPSIDFComponent::flush_udp_broadcast() {
     return;
   }
   last_broadcast_ticks_ = now;
+
+  ESP_LOGD(TAG, "Flushing UDP broadcast");
 
   // Combine all queued sentences into a single payload.
   // This is far more efficient and avoids overwhelming the network buffers.
