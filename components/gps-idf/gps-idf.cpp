@@ -15,9 +15,6 @@ static const size_t MAX_UDP_PAYLOAD = 1400; // safe typical UDP payload
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
-  // in setup()
-  ESP_LOGI(TAG, "setup this=%p", this);
-
   if (udp_broadcast_sentence_filter_.empty()) {
     ESP_LOGI(TAG, "No filters configured, using defaults GPGGA + GPRMC");
     udp_broadcast_sentence_filter_.push_back("GNGGA");
@@ -74,10 +71,6 @@ void GPSIDFComponent::loop() {
 void GPSIDFComponent::gps_task(void *pvParameters) {
   auto *self = static_cast<GPSIDFComponent *>(pvParameters);
 
-  
-  // in gps_task after cast
-  ESP_LOGI(TAG, "gps_task self=%p", self);
-
   std::string sentence;
   sentence.reserve(128);
 
@@ -97,7 +90,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
               if (self->udp_socket_ < 0) {
                 self->setup_udp_broadcast();
               } else {
-                ESP_LOGD(TAG, "Checking filter");
                 // Only queue if no filter configured (empty) OR sentence matches one of the filters
                 // Example filter logic using instance member correctly:
 
@@ -105,7 +97,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
 
                 if (!passes_filter) {
                   for (const auto &f : self->udp_broadcast_sentence_filter_) {
-                    ESP_LOGD(TAG, "Checking filter: %s", f.c_str());
                     if (sentence.find(f) != std::string::npos) {
                       passes_filter = true;
                       ESP_LOGD(TAG, "Found");
