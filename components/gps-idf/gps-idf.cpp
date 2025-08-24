@@ -226,7 +226,7 @@
       udp_socket_ = -1;
       return false;
     }
-    ESP_LOGD(TAG, "SO_BROADCAST option set successfully");
+    //ESP_LOGD(TAG, "SO_BROADCAST option set successfully");
 
     // Set the destination address
     udp_dest_addr_.sin_family = AF_INET;
