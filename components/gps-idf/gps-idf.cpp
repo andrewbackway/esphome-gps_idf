@@ -84,7 +84,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
         if (!sentence.empty()) {
           self->process_nmea_sentence(sentence);
 
-          ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
+          ESP_LOGD(TAG, "Processed NMEA sentence: %s", sentence.c_str());
           if (esphome::network::is_connected()) {
             if (self->udp_broadcast_enabled_) {
               if (self->udp_socket_ < 0) {
@@ -201,7 +201,7 @@ float GPSIDFComponent::parse_coord(const std::string &value,
 }
 
 bool GPSIDFComponent::setup_udp_broadcast() {
-  ESP_LOGI(TAG, "Setting up UDP broadcast");
+  ESP_LOGD(TAG, "Setting up UDP broadcast");
 
   udp_socket_ = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
   if (udp_socket_ < 0) {
@@ -272,8 +272,6 @@ void GPSIDFComponent::flush_udp_broadcast() {
   }
   last_broadcast_ticks_ = now;
 
-  ESP_LOGD(TAG, "Flushing UDP broadcast");
-
   // Combine all queued sentences into a single payload.
   // This is far more efficient and avoids overwhelming the network buffers.
   // Copy or swap the queue contents locally while holding mutex, then release.
@@ -289,7 +287,7 @@ void GPSIDFComponent::flush_udp_broadcast() {
     return;
   }
 
-  ESP_LOGD(TAG, "Flushing %d bytes to UDP broadcast.",  static_cast<int>(payload.size()));
+  ESP_LOGI(TAG, "Flushing %d bytes to UDP broadcast.",  static_cast<int>(payload.size()));
 
   size_t offset = 0;
   while (offset < payload.size()) {
