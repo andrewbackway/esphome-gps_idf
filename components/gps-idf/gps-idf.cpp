@@ -15,6 +15,9 @@ static const size_t MAX_UDP_PAYLOAD = 1400; // safe typical UDP payload
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
 
+  // in setup()
+  ESP_LOGI(TAG, "setup this=%p", this);
+
   if (udp_broadcast_sentence_filter_.empty()) {
     ESP_LOGI(TAG, "No filters configured, using defaults GPGGA + GPRMC");
     udp_broadcast_sentence_filter_.push_back("GPGGA");
@@ -68,6 +71,10 @@ void GPSIDFComponent::loop() {
 
 void GPSIDFComponent::gps_task(void *pvParameters) {
   auto *self = static_cast<GPSIDFComponent *>(pvParameters);
+
+  
+  // in gps_task after cast
+  ESP_LOGI(TAG, "gps_task self=%p", self);
 
   std::string sentence;
   sentence.reserve(128);
