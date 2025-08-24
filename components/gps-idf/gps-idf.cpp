@@ -75,16 +75,19 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
                 self->setup_udp_broadcast();
               } else {
                 // Only queue if no filter configured (empty) OR sentence matches one of the filters
-                bool passes_filter = udp_broadcast_sentence_filter_.empty();
+                // Example filter logic using instance member correctly:
+                bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
                 if (!passes_filter) {
-                  for (const auto &f : udp_broadcast_sentence_filter_) {
+                  for (const auto &f : self->udp_broadcast_sentence_filter_) {
                     if (sentence.find(f) != std::string::npos) {
                       passes_filter = true;
                       break;
                     }
                   }
                 }
+
                 if (passes_filter) {
+                  // Use the instance method via self
                   self->queue_udp_sentence(sentence);
                 }
               }
