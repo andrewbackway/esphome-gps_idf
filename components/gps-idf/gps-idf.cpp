@@ -2,14 +2,24 @@
 
 #include "esphome/core/log.h"
 
+#include <errno.h>
+#include <cstring>
+
 namespace esphome {
 namespace gps_idf {
 
 static const char *const TAG = "gps_idf";
 static const size_t MAX_UDP_QUEUE_SIZE = 20;
+static const size_t MAX_UDP_PAYLOAD = 1400; // safe typical UDP payload
 
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
+  
+  // Create mutex for UDP queue access
+  udp_queue_mutex_ = xSemaphoreCreateMutex();
+  if (!udp_queue_mutex_) {
+    ESP_LOGE(TAG, "Failed to create udp_queue mutex");
+  }
 
   // Start FreeRTOS task for GPS parsing
   xTaskCreatePinnedToCore(gps_task,           // task entry
@@ -64,7 +74,19 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
               if (self->udp_socket_ < 0) {
                 self->setup_udp_broadcast();
               } else {
-                self->queue_udp_sentence(sentence);
+                // Only queue if no filter configured (empty) OR sentence matches one of the filters
+                bool passes_filter = udp_broadcast_sentence_filter_.empty();
+                if (!passes_filter) {
+                  for (const auto &f : udp_broadcast_sentence_filter_) {
+                    if (sentence.find(f) != std::string::npos) {
+                      passes_filter = true;
+                      break;
+                    }
+                  }
+                }
+                if (passes_filter) {
+                  self->queue_udp_sentence(sentence);
+                }
               }
             }
           }
@@ -106,7 +128,7 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
 
 void GPSIDFComponent::parse_rmc(const std::string &sentence) {
   auto fields = split(sentence, ',');
-  if (fields.size() < 9) return;
+  if (fields.size() < 10) return;
 
   float speed_knots = fields[7].empty() ? 0 : atof(fields[7].c_str());
   float speed_kmh = speed_knots * 1.852f;
@@ -198,15 +220,19 @@ bool GPSIDFComponent::setup_udp_broadcast() {
 }
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
-  // Append CRLF to the sentence before queueing for UDP broadcast
   std::string full_sentence = sentence + "\r\n";
 
-  // If the queue is full, remove the oldest element to make space.
-  if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
-    ESP_LOGV(TAG, "UDP queue full. Dropping oldest sentence to make space.");
-    udp_queue_.erase(udp_queue_.begin());
+  if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
+    if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
+      ESP_LOGV(TAG, "UDP queue full. Dropping oldest sentence to make space.");
+      udp_queue_.pop_front();  // O(1) with deque
+    }
+    udp_queue_.push_back(full_sentence);
+    xSemaphoreGive(udp_queue_mutex_);
+  } else {
+    // If can't take mutex, drop the sentence (keep non-blocking)
+    ESP_LOGW(TAG, "queue_udp_sentence: could not take udp_queue_mutex, dropping sentence");
   }
-  udp_queue_.push_back(full_sentence);
 }
 
 void GPSIDFComponent::flush_udp_broadcast() {
@@ -226,34 +252,38 @@ void GPSIDFComponent::flush_udp_broadcast() {
 
   // Combine all queued sentences into a single payload.
   // This is far more efficient and avoids overwhelming the network buffers.
+  // Copy or swap the queue contents locally while holding mutex, then release.
   std::string payload;
-  // Reserve memory to avoid multiple reallocations, assuming ~85 chars per
-  // sentence.
-  payload.reserve(udp_queue_.size() * 85);
-  for (const auto &sentence : udp_queue_) {
-    payload.append(sentence);
+  if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
+    payload.reserve(udp_queue_.size() * 85);
+    for (const auto &sentence : udp_queue_) payload.append(sentence);
+    udp_queue_.clear();
+    xSemaphoreGive(udp_queue_mutex_);
+  } else {
+    // couldn't obtain mutex — skip this flush to avoid race
+    ESP_LOGW(TAG, "flush_udp_broadcast: could not take udp_queue_mutex");
+    return;
   }
 
-  // Clear the queue now that we have the payload.
-  udp_queue_.clear();
+  ESP_LOGD(TAG, "Flushing %d bytes to UDP broadcast.",  static_cast<int>(payload.size()));
 
-  ESP_LOGD(TAG, "Flushing %d bytes in a single UDP broadcast.", payload.size());
-
-  int bytes_sent =
-      sendto(udp_socket_, payload.c_str(), payload.size(), 0,
-             (struct sockaddr *)&udp_dest_addr_, sizeof(udp_dest_addr_));
-
-  if (bytes_sent < 0) {
-    int err = errno;
-    ESP_LOGW(TAG,
-             "flush_udp_broadcast: Failed to send UDP packet. Error code: %d, "
-             "Error message: %s",
-             err, strerror(err));
-  } else {
-    ESP_LOGI(
-        TAG,
-        "flush_udp_broadcast: Successfully sent %d bytes in a single packet.",
-        bytes_sent);
+  size_t offset = 0;
+  while (offset < payload.size()) {
+    size_t chunk_size = std::min(MAX_UDP_PAYLOAD, payload.size() - offset);
+    int bytes_sent = sendto(udp_socket_,
+                            payload.c_str() + offset,
+                            chunk_size,
+                            0,
+                            (struct sockaddr *)&udp_dest_addr_,
+                            sizeof(udp_dest_addr_));
+    if (bytes_sent < 0) {
+      int err = errno;
+      ESP_LOGW(TAG, "flush_udp_broadcast: sendto failed: %d %s", err, strerror(err));
+      break;
+    } else {
+      ESP_LOGI(TAG, "flush_udp_broadcast: sent %d bytes", bytes_sent);
+    }
+    offset += chunk_size;
   }
 }
 

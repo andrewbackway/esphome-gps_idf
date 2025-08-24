@@ -4,6 +4,9 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include <deque>
+#include <errno.h>  // if you want here, but add in .cpp too
+
 // Include ESP-IDF socket headers with angle brackets
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -45,6 +48,9 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void add_udp_broadcast_sentence_filter(const std::string &sentence) { udp_broadcast_sentence_filter_.push_back(sentence); }
 
  protected:
+  std::deque<std::string> udp_queue_;
+  SemaphoreHandle_t udp_queue_mutex_{nullptr};
+
   sensor::Sensor *latitude_sensor_{nullptr};
   sensor::Sensor *longitude_sensor_{nullptr};
   sensor::Sensor *altitude_sensor_{nullptr};
@@ -75,12 +81,9 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void parse_rmc(const std::string &sentence);
   std::vector<std::string> split(const std::string &str, char delimiter);
   float parse_coord(const std::string &value, const std::string &direction);
-  void clear_sensors();
   bool setup_udp_broadcast();
-  void send_udp_broadcast(const std::string &sentence);
   void queue_udp_sentence(const std::string &sentence);
   void flush_udp_broadcast();
-  std::string vector_to_string(const std::vector<std::string> &vec);
 
   static void gps_task(void *pvParameters);
 };
