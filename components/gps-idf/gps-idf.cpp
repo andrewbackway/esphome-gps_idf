@@ -41,6 +41,14 @@ void GPSIDFComponent::dump_config() {
                   udp_broadcast_address_.c_str());
     ESP_LOGCONFIG(TAG, "  Port: %d", udp_broadcast_port_);
     ESP_LOGCONFIG(TAG, "  Interval: %d ms", udp_broadcast_interval_ms_);
+    ESP_LOGCONFIG(TAG, "  Sentence Filter:");
+    if (udp_broadcast_sentence_filter_.empty()) {
+      ESP_LOGCONFIG(TAG, "    - (empty)");
+    } else {
+      for (const auto &filter : udp_broadcast_sentence_filter_) {
+        ESP_LOGCONFIG(TAG, "    - %s", filter.c_str());
+      }
+    }
   }
 }
 
