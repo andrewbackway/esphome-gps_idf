@@ -89,7 +89,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
         if (!sentence.empty()) {
           self->process_nmea_sentence(sentence);
 
-          // ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
+          ESP_LOGI(TAG, "Processed NMEA sentence: %s", sentence.c_str());
           if (esphome::network::is_connected()) {
             if (self->udp_broadcast_enabled_) {
               if (self->udp_socket_ < 0) {
