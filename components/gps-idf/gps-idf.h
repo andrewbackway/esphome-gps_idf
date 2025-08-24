@@ -48,9 +48,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void add_udp_broadcast_sentence_filter(const std::string &sentence) { udp_broadcast_sentence_filter_.push_back(sentence); }
 
  protected:
-  std::deque<std::string> udp_queue_;
-  SemaphoreHandle_t udp_queue_mutex_{nullptr};
-
+  
   sensor::Sensor *latitude_sensor_{nullptr};
   sensor::Sensor *longitude_sensor_{nullptr};
   sensor::Sensor *altitude_sensor_{nullptr};
@@ -62,7 +60,8 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   text_sensor::TextSensor *fix_status_sensor_{nullptr};
 
   std::string buffer_;
-  std::vector<std::string> udp_queue_;
+  std::deque<std::string> udp_queue_;
+  SemaphoreHandle_t udp_queue_mutex_{nullptr};
   bool has_fix_{false};
   TaskHandle_t gps_task_handle_{nullptr};
 
