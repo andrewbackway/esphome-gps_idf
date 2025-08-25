@@ -100,8 +100,3 @@ async def to_code(config):
         cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
         for sentence in udp_config["sentence_filter"]:
             cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
-
-    if "udp_broadcast_switch" in config:
-        sw = await switch.new_switch(config["udp_broadcast_switch"])
-        await cg.register_component(sw, config)
-        cg.add(sw.set_write_state_handler(lambda x: var.set_udp_broadcast_enabled(x)))
