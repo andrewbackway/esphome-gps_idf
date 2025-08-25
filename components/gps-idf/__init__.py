@@ -2,7 +2,7 @@ from esphome.components import sensor, text_sensor, udp, uart
 import esphome.config_validation as cv
 import esphome.codegen as cg
 
-DEPENDENCIES = ["uart", "wifi"]
+DEPENDENCIES = ["uart", "wifi", "udp"]  # Added "udp"
 AUTO_LOAD = ["sensor", "text_sensor"]
 
 nmea_gps_ns = cg.esphome_ns.namespace("gps_idf")
@@ -96,3 +96,22 @@ async def to_code(config):
         cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
         for sentence in udp_config["sentence_filter"]:
             cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
+
+        if udp_config["enabled"]:
+            # Programmatically create and configure the udp component
+            udp_id = cv.generate_id("gps_udp")
+            udp_full_config = {
+                cv.GenerateID(): udp_id,
+                "addresses": [udp_config["broadcast_address"]],
+                "port": {
+                    "broadcast_port": udp_config["port"],
+                    "listen_port": 0  # No listening needed
+                },
+            }
+            # Validate against udp's schema
+            udp_full_config = udp.CONFIG_SCHEMA(udp_full_config)
+            # Generate code for udp component
+            await udp.to_code(udp_full_config)
+            # Get the variable and inject into GPS component
+            udp_var = await cg.get_variable(udp_id)
+            cg.add(var.set_udp(udp_var))

@@ -5,13 +5,9 @@
 #include <freertos/task.h>
 
 #include <deque>
-#include <errno.h>  // if you want here, but add in .cpp too
 
-// Include ESP-IDF socket headers with angle brackets
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+// Include ESP-IDF socket headers if still needed, but remove unused
+// #include <sys/socket.h> etc. if no longer used after refactor
 
 #include <string>
 #include <vector>
@@ -21,6 +17,7 @@
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
+#include "esphome/components/udp/udp_component.h"  // Added
 
 namespace esphome {
 namespace gps_idf {
@@ -46,7 +43,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void set_udp_broadcast_address(const std::string &address) { udp_broadcast_address_ = address; }
   void set_udp_broadcast_interval(uint32_t interval_ms) { udp_broadcast_interval_ms_ = interval_ms; }
   void add_udp_broadcast_sentence_filter(const std::string &sentence) { udp_broadcast_sentence_filter_.push_back(sentence); }
-  void close_udp_broadcast();
+  void set_udp(udp::UDPComponent *udp) { udp_ = udp; }  // Added
 
  protected:
   
@@ -72,16 +69,15 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   std::string udp_broadcast_address_{"255.255.255.255"};
   uint32_t udp_broadcast_interval_ms_{15000};
   std::vector<std::string> udp_broadcast_sentence_filter_;
-  int udp_socket_{-1};
-  struct sockaddr_in udp_dest_addr_;
   TickType_t last_broadcast_ticks_{0};
+
+  udp::UDPComponent *udp_{nullptr};  // Added
 
   void process_nmea_sentence(const std::string &sentence);
   void parse_gga(const std::string &sentence);
   void parse_rmc(const std::string &sentence);
   std::vector<std::string> split(const std::string &str, char delimiter);
   float parse_coord(const std::string &value, const std::string &direction);
-  bool setup_udp_broadcast();
   void queue_udp_sentence(const std::string &sentence);
   void flush_udp_broadcast();
 
