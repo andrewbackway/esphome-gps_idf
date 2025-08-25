@@ -1,9 +1,9 @@
-from esphome.components import sensor, text_sensor, udp, uart
+from esphome.components import sensor, text_sensor, udp, uart, switch
 import esphome.config_validation as cv
 import esphome.codegen as cg
 
-DEPENDENCIES = ["uart", "wifi", "udp"]  # Added "udp"
-AUTO_LOAD = ["sensor", "text_sensor"]
+DEPENDENCIES = ["uart", "wifi", "udp"]
+AUTO_LOAD = ["sensor", "text_sensor", "switch"]
 
 nmea_gps_ns = cg.esphome_ns.namespace("gps_idf")
 NMEAGPSComponent = nmea_gps_ns.class_(
@@ -53,6 +53,10 @@ CONFIG_SCHEMA = cv.Schema(
         cv.Optional("datetime"): text_sensor.text_sensor_schema(),
         cv.Optional("fix_status"): text_sensor.text_sensor_schema(),
         cv.Optional("udp_broadcast"): UDP_BROADCAST_SCHEMA,
+        cv.Optional("udp_broadcast_switch"): switch.switch_schema(
+            NMEAGPSComponent,
+            icon="mdi:broadcast",
+        ),
     }
 ).extend(cv.COMPONENT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA)
 
@@ -97,21 +101,7 @@ async def to_code(config):
         for sentence in udp_config["sentence_filter"]:
             cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
 
-        if udp_config["enabled"]:
-            # Programmatically create and configure the udp component
-            udp_id = cv.generate_id("gps_udp")
-            udp_full_config = {
-                cv.GenerateID(): udp_id,
-                "addresses": [udp_config["broadcast_address"]],
-                "port": {
-                    "broadcast_port": udp_config["port"],
-                    "listen_port": 0  # No listening needed
-                },
-            }
-            # Validate against udp's schema
-            udp_full_config = udp.CONFIG_SCHEMA(udp_full_config)
-            # Generate code for udp component
-            await udp.to_code(udp_full_config)
-            # Get the variable and inject into GPS component
-            udp_var = await cg.get_variable(udp_id)
-            cg.add(var.set_udp(udp_var))
+    if "udp_broadcast_switch" in config:
+        sw = await switch.new_switch(config["udp_broadcast_switch"])
+        await cg.register_component(sw, config)
+        cg.add(sw.set_write_state_handler(lambda x: var.set_udp_broadcast_enabled(x)))

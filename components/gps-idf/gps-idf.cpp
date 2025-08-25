@@ -7,7 +7,7 @@ namespace gps_idf {
 
 static const char *const TAG = "gps_idf";
 static const size_t MAX_UDP_QUEUE_SIZE = 20;
-static const size_t MAX_UDP_PAYLOAD = 1400;  // Keep for chunking
+static const size_t MAX_UDP_PAYLOAD = 1400;
 
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPSIDFComponent...");
@@ -60,7 +60,7 @@ void GPSIDFComponent::dump_config() {
 void GPSIDFComponent::loop() {
   // This function is called repeatedly by the main ESPHome loop.
   // We check if it's time to send the queued UDP data.
-  if (udp_broadcast_enabled_) {
+  if (udp_broadcast_enabled_ && udp_ != nullptr) {
     flush_udp_broadcast();
   }
 }
@@ -81,8 +81,10 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
         if (!sentence.empty()) {
           self->process_nmea_sentence(sentence);
 
-          //ESP_LOGD(TAG, "Processed NMEA sentence: %s", sentence.c_str());
           if (esphome::network::is_connected() && self->udp_broadcast_enabled_) {
+            if (self->udp_ == nullptr) {
+              self->setup_udp_broadcast();
+            }
             // Only queue if no filter configured (empty) OR sentence matches one of the filters
             bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
 
@@ -96,9 +98,10 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
             }
 
             if (passes_filter) {
-              //ESP_LOGD(TAG, "Sentence passed filter queuing UDP");
               self->queue_udp_sentence(sentence);
             }
+          } else if (self->udp_ != nullptr) {
+            self->close_udp_broadcast();
           }
 
           sentence.clear();
@@ -110,6 +113,44 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
 
     // Yield to FreeRTOS scheduler (prevents watchdog reset)
     vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
+}
+
+bool GPSIDFComponent::setup_udp_broadcast() {
+  ESP_LOGI(TAG, "Setting up UDP broadcast");
+
+  if (udp_ != nullptr) {
+    ESP_LOGW(TAG, "UDP component already exists, skipping setup");
+    return true;
+  }
+
+  udp_ = new udp::UDPComponent();
+  if (udp_ == nullptr) {
+    ESP_LOGE(TAG, "Failed to allocate UDPComponent");
+    return false;
+  }
+
+  // Configure UDP component
+  udp_->set_addresses({udp_broadcast_address_});
+  udp_->set_broadcast_port(udp_broadcast_port_);
+  udp_->set_listen_port(0); // No listening needed
+  udp_->begin(); // Initialize the component
+
+  ESP_LOGI(TAG, "UDP broadcast setup complete: %s:%d", udp_broadcast_address_.c_str(), udp_broadcast_port_);
+  return true;
+}
+
+void GPSIDFComponent::close_udp_broadcast() {
+  if (udp_ != nullptr) {
+    ESP_LOGI(TAG, "Closing UDP broadcast");
+    if (xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
+      delete udp_;
+      udp_ = nullptr;
+      udp_queue_.clear();
+      xSemaphoreGive(udp_queue_mutex_);
+    } else {
+      ESP_LOGW(TAG, "Failed to take mutex to clear UDP queue");
+    }
   }
 }
 
@@ -190,17 +231,15 @@ float GPSIDFComponent::parse_coord(const std::string &value,
 
 void GPSIDFComponent::queue_udp_sentence(const std::string &sentence) {
   std::string full_sentence = sentence + "\r\n";
-  //ESP_LOGD(TAG, "Queueing UDP sentence: %s", full_sentence.c_str());
 
   if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
     if (udp_queue_.size() >= MAX_UDP_QUEUE_SIZE) {
       ESP_LOGV(TAG, "UDP queue full. Dropping oldest sentence to make space.");
-      udp_queue_.pop_front();  // O(1) with deque
+      udp_queue_.pop_front();
     }
     udp_queue_.push_back(full_sentence);
     xSemaphoreGive(udp_queue_mutex_);
   } else {
-    // If can't take mutex, drop the sentence (keep non-blocking)
     ESP_LOGW(TAG, "queue_udp_sentence: could not take udp_queue_mutex, dropping sentence");
   }
 }
@@ -221,8 +260,6 @@ void GPSIDFComponent::flush_udp_broadcast() {
   last_broadcast_ticks_ = now;
 
   // Combine all queued sentences into a single payload.
-  // This is far more efficient and avoids overwhelming the network buffers.
-  // Copy or swap the queue contents locally while holding mutex, then release.
   std::string payload;
   if (udp_queue_mutex_ && xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
     payload.reserve(udp_queue_.size() * 85);
@@ -230,7 +267,6 @@ void GPSIDFComponent::flush_udp_broadcast() {
     udp_queue_.clear();
     xSemaphoreGive(udp_queue_mutex_);
   } else {
-    // couldn't obtain mutex — skip this flush to avoid race
     ESP_LOGW(TAG, "flush_udp_broadcast: could not take udp_queue_mutex");
     return;
   }
@@ -240,9 +276,7 @@ void GPSIDFComponent::flush_udp_broadcast() {
   size_t offset = 0;
   while (offset < payload.size()) {
     size_t chunk_size = std::min(MAX_UDP_PAYLOAD, payload.size() - offset);
-    // Send using the udp component
     udp_->send_packet(reinterpret_cast<const uint8_t *>(payload.c_str() + offset), chunk_size);
-    // Note: No error checking here; udp component logs failures internally
     ESP_LOGI(TAG, "flush_udp_broadcast: sent %d bytes", static_cast<int>(chunk_size));
     offset += chunk_size;
   }
