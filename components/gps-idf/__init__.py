@@ -13,10 +13,9 @@ NMEAGPSComponent = nmea_gps_ns.class_(
 UDP_BROADCAST_SCHEMA = cv.Schema(
     {
         cv.Optional("enabled", default=False): cv.boolean,
-        cv.Optional("port", default=10110): cv.port,
-        cv.Optional("broadcast_address", default="255.255.255.255"): cv.string,
         cv.Optional("sentence_filter", default=[]): cv.ensure_list(cv.string),
         cv.Optional("interval", default="15s"): cv.positive_time_period_seconds,
+        cv.Required("udp_id"): cv.use_id(udp.UDPComponent),  # Reference YAML-defined udp component
     }
 )
 
@@ -95,8 +94,13 @@ async def to_code(config):
     if "udp_broadcast" in config:
         udp_config = config["udp_broadcast"]
         cg.add(var.set_udp_broadcast_enabled(udp_config["enabled"]))
-        cg.add(var.set_udp_broadcast_port(udp_config["port"]))
-        cg.add(var.set_udp_broadcast_address(udp_config["broadcast_address"]))
         cg.add(var.set_udp_broadcast_interval(udp_config["interval"].total_milliseconds))
         for sentence in udp_config["sentence_filter"]:
             cg.add(var.add_udp_broadcast_sentence_filter(cg.std_string(sentence)))
+        udp_var = await cg.get_variable(udp_config["udp_id"])
+        cg.add(var.set_udp(udp_var))
+
+    if "udp_broadcast_switch" in config:
+        sw = await switch.new_switch(config["udp_broadcast_switch"])
+        await cg.register_component(sw, config)
+        cg.add(sw.set_write_state_handler(lambda x: var.set_udp_broadcast_enabled(x)))

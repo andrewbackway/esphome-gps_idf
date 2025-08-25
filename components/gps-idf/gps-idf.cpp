@@ -42,9 +42,6 @@ void GPSIDFComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "  UDP Broadcast: %s",
                 udp_broadcast_enabled_ ? "enabled" : "disabled");
   if (udp_broadcast_enabled_) {
-    ESP_LOGCONFIG(TAG, "  Broadcast Address: %s",
-                  udp_broadcast_address_.c_str());
-    ESP_LOGCONFIG(TAG, "  Port: %d", udp_broadcast_port_);
     ESP_LOGCONFIG(TAG, "  Interval: %d ms", udp_broadcast_interval_ms_);
     ESP_LOGCONFIG(TAG, "  Sentence Filter:");
     if (udp_broadcast_sentence_filter_.empty()) {
@@ -81,10 +78,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
         if (!sentence.empty()) {
           self->process_nmea_sentence(sentence);
 
-          if (esphome::network::is_connected() && self->udp_broadcast_enabled_) {
-            if (self->udp_ == nullptr) {
-              self->setup_udp_broadcast();
-            }
+          if (esphome::network::is_connected() && self->udp_broadcast_enabled_ && self->udp_ != nullptr) {
             // Only queue if no filter configured (empty) OR sentence matches one of the filters
             bool passes_filter = self->udp_broadcast_sentence_filter_.empty();
 
@@ -100,8 +94,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
             if (passes_filter) {
               self->queue_udp_sentence(sentence);
             }
-          } else if (self->udp_ != nullptr) {
-            self->close_udp_broadcast();
           }
 
           sentence.clear();
@@ -113,44 +105,6 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
 
     // Yield to FreeRTOS scheduler (prevents watchdog reset)
     vTaskDelay(10 / portTICK_PERIOD_MS);
-  }
-}
-
-bool GPSIDFComponent::setup_udp_broadcast() {
-  ESP_LOGI(TAG, "Setting up UDP broadcast");
-
-  if (udp_ != nullptr) {
-    ESP_LOGW(TAG, "UDP component already exists, skipping setup");
-    return true;
-  }
-
-  udp_ = new udp::UDPComponent();
-  if (udp_ == nullptr) {
-    ESP_LOGE(TAG, "Failed to allocate UDPComponent");
-    return false;
-  }
-
-  // Configure UDP component
-  udp_->set_addresses({udp_broadcast_address_});
-  udp_->set_broadcast_port(udp_broadcast_port_);
-  udp_->set_listen_port(0); // No listening needed
-  udp_->begin(); // Initialize the component
-
-  ESP_LOGI(TAG, "UDP broadcast setup complete: %s:%d", udp_broadcast_address_.c_str(), udp_broadcast_port_);
-  return true;
-}
-
-void GPSIDFComponent::close_udp_broadcast() {
-  if (udp_ != nullptr) {
-    ESP_LOGI(TAG, "Closing UDP broadcast");
-    if (xSemaphoreTake(udp_queue_mutex_, pdMS_TO_TICKS(100))) {
-      delete udp_;
-      udp_ = nullptr;
-      udp_queue_.clear();
-      xSemaphoreGive(udp_queue_mutex_);
-    } else {
-      ESP_LOGW(TAG, "Failed to take mutex to clear UDP queue");
-    }
   }
 }
 
