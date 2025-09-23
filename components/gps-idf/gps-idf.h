@@ -23,6 +23,7 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void setup() override;
   void loop() override;
   void dump_config() override;
+  ~GPSIDFComponent();
 
   // Setters for YAML configuration
   void set_latitude_sensor(sensor::Sensor *sensor) { latitude_sensor_ = sensor; }
@@ -41,7 +42,6 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
 
  protected:
  
-  sensor::Sensor *altitude_sensor_{nullptr};
   sensor::Sensor *latitude_sensor_{nullptr};
   sensor::Sensor *longitude_sensor_{nullptr};
   sensor::Sensor *altitude_sensor_{nullptr};
