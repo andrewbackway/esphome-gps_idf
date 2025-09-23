@@ -364,18 +364,15 @@ void GPSIDFComponent::flush_udp_broadcast() {
   while (offset < payload.size() && chunks_sent < MAX_CHUNKS_PER_FLUSH) {
     size_t chunk_size = std::min(MAX_UDP_PAYLOAD, payload.size() - offset);
     
-    try {
-      // Note: send_packet might not return a success indicator
-      // If it throws or causes issues, we'll catch them
-      udp_->send_packet(reinterpret_cast<const uint8_t *>(payload.c_str() + offset), chunk_size);
-      ESP_LOGV(TAG, "flush_udp_broadcast: sent chunk %d (%d bytes)", chunks_sent + 1, static_cast<int>(chunk_size));
-    } catch (const std::exception& e) {
-      ESP_LOGE(TAG, "UDP send exception: %s", e.what());
-      break;
-    } catch (...) {
-      ESP_LOGE(TAG, "Unknown UDP send exception, aborting");
+    // Simple error checking - if UDP component becomes null or network disconnects, abort
+    if (!udp_ || !esphome::network::is_connected()) {
+      ESP_LOGW(TAG, "UDP component or network unavailable during send, aborting");
       break;
     }
+    
+    // Send the packet - no exception handling available in ESP-IDF
+    udp_->send_packet(reinterpret_cast<const uint8_t *>(payload.c_str() + offset), chunk_size);
+    ESP_LOGV(TAG, "flush_udp_broadcast: sent chunk %d (%d bytes)", chunks_sent + 1, static_cast<int>(chunk_size));
     
     offset += chunk_size;
     chunks_sent++;
