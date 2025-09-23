@@ -40,6 +40,8 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   void set_udp(udp::UDPComponent *udp) { udp_ = udp; }
 
  protected:
+ 
+  sensor::Sensor *altitude_sensor_{nullptr};
   sensor::Sensor *latitude_sensor_{nullptr};
   sensor::Sensor *longitude_sensor_{nullptr};
   sensor::Sensor *altitude_sensor_{nullptr};

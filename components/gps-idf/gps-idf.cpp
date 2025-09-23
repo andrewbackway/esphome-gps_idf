@@ -124,11 +124,13 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
   float lon = parse_coord(fields[4], fields[5]);
   int sats = fields[7].empty() ? 0 : atoi(fields[7].c_str());
   float hdop = fields[8].empty() ? 0 : atof(fields[8].c_str());
+  float altitude = fields[9].empty() ? 0 : atof(fields[9].c_str());
 
   if (latitude_sensor_ != nullptr) latitude_sensor_->publish_state(lat);
   if (longitude_sensor_ != nullptr) longitude_sensor_->publish_state(lon);
   if (satellites_sensor_ != nullptr) satellites_sensor_->publish_state(sats);
   if (hdop_sensor_ != nullptr) hdop_sensor_->publish_state(hdop);
+  if (altitude_sensor_ != nullptr) altitude_sensor_->publish_state(altitude);
 }
 
 void GPSIDFComponent::parse_rmc(const std::string &sentence) {
