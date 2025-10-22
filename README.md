@@ -70,7 +70,7 @@ web_server:
   local: true
 
 external_components:
-  - source: github://andrewbackway/esphome-gps-idf\
+  - source: github://andrewbackway/esphome-gps_idf
 
 uart:
   - id: uart_gps
