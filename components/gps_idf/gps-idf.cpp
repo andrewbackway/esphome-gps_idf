@@ -8,7 +8,7 @@ namespace gps_idf {
 static const char *TAG = "gps_idf";
 
 void GPSIDFComponent::setup() {
-  ESP_LOGCONFIG(TAG, "Setting up GPS-IDF component...");
+  ESP_LOGI(TAG, "Setting up GPS-IDF component...");
   this->buffer_.reserve(256);  // Reserve buffer for NMEA sentences
 
   // Create FreeRTOS task for GPS processing
