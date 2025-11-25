@@ -31,6 +31,9 @@ void GPSIDFComponent::register_sensor(sensor::Sensor *sensor, SensorType type) {
     case SensorType::HDOP:
       this->hdop_sensor_ = sensor;
       break;
+    default:
+      ESP_LOGW(TAG, "Unknown sensor type: %d", static_cast<int>(type));
+      break;
   }
 }
 #endif
@@ -43,6 +46,9 @@ void GPSIDFComponent::register_text_sensor(text_sensor::TextSensor *sensor, Text
       break;
     case TextSensorType::FIX_STATUS:
       this->fix_status_sensor_ = sensor;
+      break;
+    default:
+      ESP_LOGW(TAG, "Unknown text sensor type: %d", static_cast<int>(type));
       break;
   }
 }
