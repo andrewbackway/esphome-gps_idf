@@ -33,36 +33,46 @@ uart:
     rx_pin: GPIO03
     baud_rate: 9600
 
-gps-idf:
+gps_idf:
   id: gps
   uart_id: uart_gps
-  latitude:
+
+sensor:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: latitude
     name: "GPS Latitude"
-    unit_of_measurement: "°"
-    accuracy_decimals: 6
-  longitude:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: longitude
     name: "GPS Longitude"
-    unit_of_measurement: "°"
-    accuracy_decimals: 6
-  altitude:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: altitude
     name: "GPS Altitude"
-    unit_of_measurement: "m"
-    accuracy_decimals: 1
-  speed:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: speed
     name: "GPS Speed"
-    unit_of_measurement: "km/h"
-    accuracy_decimals: 1
-  course:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: course
     name: "GPS Course"
-    unit_of_measurement: "°"
-    accuracy_decimals: 1
-  satellites:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: satellites
     name: "GPS Satellites"
-    accuracy_decimals: 0
-  hdop:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: hdop
     name: "GPS HDOP"
-    accuracy_decimals: 2
-  datetime:
+
+text_sensor:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: datetime
     name: "GPS DateTime"
-  fix_status:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: fix_status
     name: "GPS Fix Status"

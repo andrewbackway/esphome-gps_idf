@@ -7,6 +7,47 @@ namespace gps_idf {
 
 static const char *TAG = "gps_idf";
 
+#ifdef USE_SENSOR
+void GPSIDFComponent::register_sensor(sensor::Sensor *sensor, SensorType type) {
+  switch (type) {
+    case SensorType::LATITUDE:
+      this->latitude_sensor_ = sensor;
+      break;
+    case SensorType::LONGITUDE:
+      this->longitude_sensor_ = sensor;
+      break;
+    case SensorType::ALTITUDE:
+      this->altitude_sensor_ = sensor;
+      break;
+    case SensorType::SPEED:
+      this->speed_sensor_ = sensor;
+      break;
+    case SensorType::COURSE:
+      this->course_sensor_ = sensor;
+      break;
+    case SensorType::SATELLITES:
+      this->satellites_sensor_ = sensor;
+      break;
+    case SensorType::HDOP:
+      this->hdop_sensor_ = sensor;
+      break;
+  }
+}
+#endif
+
+#ifdef USE_TEXT_SENSOR
+void GPSIDFComponent::register_text_sensor(text_sensor::TextSensor *sensor, TextSensorType type) {
+  switch (type) {
+    case TextSensorType::DATETIME:
+      this->datetime_sensor_ = sensor;
+      break;
+    case TextSensorType::FIX_STATUS:
+      this->fix_status_sensor_ = sensor;
+      break;
+  }
+}
+#endif
+
 void GPSIDFComponent::setup() {
   ESP_LOGI(TAG, "Setting up GPS-IDF component...");
   this->buffer_.reserve(256);  // Reserve buffer for NMEA sentences
@@ -41,6 +82,7 @@ void GPSIDFComponent::gps_task(void *pvParameters) {
 
 void GPSIDFComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "GPS-IDF:");
+#ifdef USE_SENSOR
   LOG_SENSOR("  ", "Latitude", this->latitude_sensor_);
   LOG_SENSOR("  ", "Longitude", this->longitude_sensor_);
   LOG_SENSOR("  ", "Altitude", this->altitude_sensor_);
@@ -48,8 +90,11 @@ void GPSIDFComponent::dump_config() {
   LOG_SENSOR("  ", "Course", this->course_sensor_);
   LOG_SENSOR("  ", "Satellites", this->satellites_sensor_);
   LOG_SENSOR("  ", "HDOP", this->hdop_sensor_);
+#endif
+#ifdef USE_TEXT_SENSOR
   LOG_TEXT_SENSOR("  ", "DateTime", this->datetime_sensor_);
   LOG_TEXT_SENSOR("  ", "Fix Status", this->fix_status_sensor_);
+#endif
 }
 
 void GPSIDFComponent::process_nmea_sentence(const std::string &sentence) {
@@ -73,6 +118,7 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
   int fix_quality = std::atoi(fields[6].c_str());
   this->has_fix_ = (fix_quality > 0);
 
+#ifdef USE_TEXT_SENSOR
   if (this->fix_status_sensor_) {
     if (!this->has_fix_) {
       this->fix_status_sensor_->publish_state("No Fix");
@@ -80,12 +126,14 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
       this->fix_status_sensor_->publish_state(fix_quality == 1 ? "2D Fix" : "3D Fix");
     }
   }
+#endif
 
   if (!this->has_fix_) {
     clear_sensors();
     return;
   }
 
+#ifdef USE_SENSOR
   if (this->latitude_sensor_ && !fields[2].empty() && !fields[3].empty()) {
     float lat = parse_coord(fields[2], fields[3]);
     this->latitude_sensor_->publish_state(lat);
@@ -107,6 +155,7 @@ void GPSIDFComponent::parse_gga(const std::string &sentence) {
   if (this->altitude_sensor_ && !fields[9].empty() && !fields[10].empty() && fields[10] == "M") {
     this->altitude_sensor_->publish_state(std::stof(fields[9]));
   }
+#endif
 }
 
 void GPSIDFComponent::parse_rmc(const std::string &sentence) {
@@ -121,6 +170,7 @@ void GPSIDFComponent::parse_rmc(const std::string &sentence) {
     return;
   }
 
+#ifdef USE_SENSOR
   if (this->speed_sensor_ && !fields[7].empty()) {
     float speed_knots = std::stof(fields[7]);
     float speed_kmh = speed_knots * 1.852;
@@ -130,7 +180,9 @@ void GPSIDFComponent::parse_rmc(const std::string &sentence) {
   if (this->course_sensor_ && !fields[8].empty()) {
     this->course_sensor_->publish_state(std::stof(fields[8]));
   }
+#endif
 
+#ifdef USE_TEXT_SENSOR
   if (this->datetime_sensor_ && !fields[9].empty() && !fields[1].empty()) {
     std::string date = fields[9];
     std::string time = fields[1];
@@ -141,6 +193,7 @@ void GPSIDFComponent::parse_rmc(const std::string &sentence) {
       this->datetime_sensor_->publish_state(datetime);
     }
   }
+#endif
 }
 
 std::vector<std::string> GPSIDFComponent::split(const std::string &str, char delimiter) {
@@ -173,6 +226,7 @@ float GPSIDFComponent::parse_coord(const std::string &value, const std::string &
 }
 
 void GPSIDFComponent::clear_sensors() {
+#ifdef USE_SENSOR
   if (this->latitude_sensor_) this->latitude_sensor_->publish_state(NAN);
   if (this->longitude_sensor_) this->longitude_sensor_->publish_state(NAN);
   if (this->altitude_sensor_) this->altitude_sensor_->publish_state(NAN);
@@ -180,7 +234,10 @@ void GPSIDFComponent::clear_sensors() {
   if (this->course_sensor_) this->course_sensor_->publish_state(NAN);
   if (this->satellites_sensor_) this->satellites_sensor_->publish_state(NAN);
   if (this->hdop_sensor_) this->hdop_sensor_->publish_state(NAN);
+#endif
+#ifdef USE_TEXT_SENSOR
   if (this->datetime_sensor_) this->datetime_sensor_->publish_state("");
+#endif
 }
 
 }  // namespace gps_idf
