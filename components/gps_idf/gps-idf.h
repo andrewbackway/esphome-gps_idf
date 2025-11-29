@@ -8,31 +8,49 @@
 #include <vector>
 
 #include "esphome.h"
-#include "esphome/components/sensor/sensor.h"
-#include "esphome/components/text_sensor/text_sensor.h"
-#include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
+#include "esphome/core/defines.h"
+#include "esphome/components/uart/uart.h"
+
+#ifdef USE_SENSOR
+#include "esphome/components/sensor/sensor.h"
+#endif
+#ifdef USE_TEXT_SENSOR
+#include "esphome/components/text_sensor/text_sensor.h"
+#endif
 
 namespace esphome {
 namespace gps_idf {
+
+enum SensorType : uint8_t {
+  LATITUDE = 0,
+  LONGITUDE,
+  ALTITUDE,
+  SPEED,
+  COURSE,
+  SATELLITES,
+  HDOP,
+};
+
+enum TextSensorType : uint8_t {
+  DATETIME = 0,
+  FIX_STATUS,
+};
 
 class GPSIDFComponent : public Component, public uart::UARTDevice {
  public:
   void setup() override;
   void dump_config() override;
 
-  // Setters for YAML configuration
-  void set_latitude_sensor(sensor::Sensor *sensor) { latitude_sensor_ = sensor; }
-  void set_longitude_sensor(sensor::Sensor *sensor) { longitude_sensor_ = sensor; }
-  void set_altitude_sensor(sensor::Sensor *sensor) { altitude_sensor_ = sensor; }
-  void set_speed_sensor(sensor::Sensor *sensor) { speed_sensor_ = sensor; }
-  void set_course_sensor(sensor::Sensor *sensor) { course_sensor_ = sensor; }
-  void set_satellites_sensor(sensor::Sensor *sensor) { satellites_sensor_ = sensor; }
-  void set_hdop_sensor(sensor::Sensor *sensor) { hdop_sensor_ = sensor; }
-  void set_datetime_sensor(text_sensor::TextSensor *sensor) { datetime_sensor_ = sensor; }
-  void set_fix_status_sensor(text_sensor::TextSensor *sensor) { fix_status_sensor_ = sensor; }
+#ifdef USE_SENSOR
+  void register_sensor(sensor::Sensor *sensor, SensorType type);
+#endif
+#ifdef USE_TEXT_SENSOR
+  void register_text_sensor(text_sensor::TextSensor *sensor, TextSensorType type);
+#endif
 
  protected:
+#ifdef USE_SENSOR
   sensor::Sensor *latitude_sensor_{nullptr};
   sensor::Sensor *longitude_sensor_{nullptr};
   sensor::Sensor *altitude_sensor_{nullptr};
@@ -40,8 +58,11 @@ class GPSIDFComponent : public Component, public uart::UARTDevice {
   sensor::Sensor *course_sensor_{nullptr};
   sensor::Sensor *satellites_sensor_{nullptr};
   sensor::Sensor *hdop_sensor_{nullptr};
+#endif
+#ifdef USE_TEXT_SENSOR
   text_sensor::TextSensor *datetime_sensor_{nullptr};
   text_sensor::TextSensor *fix_status_sensor_{nullptr};
+#endif
 
   std::string buffer_;
   bool has_fix_{false};

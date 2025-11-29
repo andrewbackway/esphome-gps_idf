@@ -6,6 +6,7 @@ This is an ESPHome external component for processing NMEA GPS data using the on 
 
 - Runs on ESP IDF Framework 
 - Supports parsing of NMEA GGA and RMC sentences.
+- Uses ESPHome's **platform approach** for sensors - sensors are defined under the `sensor:` and `text_sensor:` blocks
 - Provides the following sensor data:
   - Latitude (°)
   - Longitude (°)
@@ -78,40 +79,74 @@ uart:
     rx_pin: GPIO03
     baud_rate: 9600
 
-gps-idf:
+# GPS-IDF hub component
+gps_idf:
   id: gps
   uart_id: uart_gps
-  latitude:
+
+# Sensors using platform approach
+sensor:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: latitude
     name: "GPS Latitude"
-    unit_of_measurement: "°"
-    accuracy_decimals: 6
-  longitude:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: longitude
     name: "GPS Longitude"
-    unit_of_measurement: "°"
-    accuracy_decimals: 6
-  altitude:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: altitude
     name: "GPS Altitude"
-    unit_of_measurement: "m"
-    accuracy_decimals: 1
-  speed:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: speed
     name: "GPS Speed"
-    unit_of_measurement: "km/h"
-    accuracy_decimals: 1
-  course:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: course
     name: "GPS Course"
-    unit_of_measurement: "°"
-    accuracy_decimals: 1
-  satellites:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: satellites
     name: "GPS Satellites"
-    accuracy_decimals: 0
-  hdop:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: hdop
     name: "GPS HDOP"
-    accuracy_decimals: 2
-  datetime:
+
+# Text sensors using platform approach
+text_sensor:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: datetime
     name: "GPS DateTime"
-  fix_status:
+  - platform: gps_idf
+    gps_idf_id: gps
+    type: fix_status
     name: "GPS Fix Status"
 ```
+
+## Sensor Types
+
+### Numeric Sensors (`sensor:`)
+
+| Type | Description | Unit | Default Decimals |
+|------|-------------|------|------------------|
+| `latitude` | GPS Latitude | ° | 6 |
+| `longitude` | GPS Longitude | ° | 6 |
+| `altitude` | GPS Altitude | m | 1 |
+| `speed` | GPS Speed | km/h | 1 |
+| `course` | GPS Course/Heading | ° | 1 |
+| `satellites` | Number of satellites in view | - | 0 |
+| `hdop` | Horizontal Dilution of Precision | - | 2 |
+
+### Text Sensors (`text_sensor:`)
+
+| Type | Description |
+|------|-------------|
+| `datetime` | GPS Date/Time in ISO 8601 format |
+| `fix_status` | GPS Fix status: "No Fix", "2D Fix", or "3D Fix" |
 
 ## Hardware Setup
 
