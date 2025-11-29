@@ -84,7 +84,6 @@ gps_idf:
   id: gps
   uart_id: uart_gps
 
-# Sensors using platform approach
 sensor:
   - platform: gps_idf
     gps_idf_id: gps
@@ -115,7 +114,6 @@ sensor:
     type: hdop
     name: "GPS HDOP"
 
-# Text sensors using platform approach
 text_sensor:
   - platform: gps_idf
     gps_idf_id: gps
